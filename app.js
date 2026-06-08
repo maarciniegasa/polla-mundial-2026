@@ -1,6 +1,6 @@
 // app.js - Polla Mundialista 2026 | Firebase Firestore Edition
 
-const ADMIN_EMAIL = 'admin@polla.com';
+const ADMIN_EMAIL = 'maarciniegasa@gmail.com';
 
 // Sanitize email for safe Firestore document ID
 function emailId(email) {
@@ -21,24 +21,30 @@ function hideLoading() {
 }
 
 // --- FIRESTORE INIT: Seed matches once on first run ---
-async function initDB() {
-    const configRef = db.collection('config').doc('app');
-    const configSnap = await configRef.get();
-    if (!configSnap.exists) {
-        showLoading('Inicializando base de datos por primera vez...');
-        // Firestore batch limit is 500 writes; we have 104 matches — one batch is enough
-        const batch = db.batch();
-        allMatchesData.forEach(match => {
-            batch.set(db.collection('matches').doc(String(match.id)), match);
-        });
-        await batch.commit();
-        await configRef.set({
-            matchesSeeded: true,
-            seededAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log('✅ Partidos cargados a Firestore.');
+    async function initDB() {
+        const configRef = db.collection('config').doc('app');
+        const configSnap = await configRef.get();
+        if (!configSnap.exists) {
+            showLoading('Inicializando base de datos por primera vez...');
+            const batch = db.batch();
+            allMatchesData.forEach(match => {
+                batch.set(db.collection('matches').doc(String(match.id)), match);
+            });
+            await batch.commit();
+            await configRef.set({
+                matchesSeeded: true,
+                seededAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log('✅ Partidos cargados a Firestore.');
+        }
+
+        // Fix legacy phase name for match 104
+        const finalRef = db.collection('matches').doc('104');
+        const finalSnap = await finalRef.get();
+        if (finalSnap.exists && finalSnap.data().phase === 'FINAL') {
+            await finalRef.update({ phase: 'Final' });
+        }
     }
-}
 
 // --- TIME LOCK LOGIC ---
 function parseMatchTime(timeStr) {
@@ -113,10 +119,19 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
         if (authMode === 'register') {
             if (!name) { errorEl.textContent = 'El nombre es obligatorio.'; hideLoading(); return; }
 
-            const existing = await db.collection('users').doc(emailId(email)).get();
-            if (existing.exists) { errorEl.textContent = 'El correo ya está registrado.'; hideLoading(); return; }
-
-            await auth.createUserWithEmailAndPassword(email, pass);
+            try {
+                await auth.createUserWithEmailAndPassword(email, pass);
+            } catch (regErr) {
+                if (regErr.code === 'auth/email-already-in-use') {
+                    errorEl.textContent = 'El correo ya está registrado.';
+                } else if (regErr.code === 'auth/weak-password') {
+                    errorEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+                } else {
+                    errorEl.textContent = 'Error al registrar. Intenta de nuevo.';
+                }
+                hideLoading();
+                return;
+            }
 
             await db.collection('users').doc(emailId(email)).set({
                 email, name,
@@ -162,6 +177,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
 
 async function loginUser(user) {
     currentUser = user;
+    await initDB();
 
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('main-app').style.display = 'flex';
@@ -214,15 +230,6 @@ auth.onAuthStateChanged(async (firebaseUser) => {
 
     showLoading('Iniciando la plataforma...');
     try {
-        await initDB();
-
-        // Fix legacy phase name for match 104
-        const finalRef = db.collection('matches').doc('104');
-        const finalSnap = await finalRef.get();
-        if (finalSnap.exists && finalSnap.data().phase === 'FINAL') {
-            await finalRef.update({ phase: 'Final' });
-        }
-
         if (firebaseUser) {
             const snap = await db.collection('users').doc(emailId(firebaseUser.email)).get();
             if (snap.exists) {
