@@ -17,7 +17,7 @@ const allMatchesData = [
     },
     {
         id: 3, phase: 'Jornada 1', group: 'B',
-        home: 'Canadáá', homeFlag: '🇨🇦',
+        home: 'Canadá', homeFlag: '🇨🇦',
         away: 'Bosnia y Herzegovina', awayFlag: '🇧🇦',
         time: 'Vie 12-Jun, 2:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
@@ -45,7 +45,7 @@ const allMatchesData = [
     },
     {
         id: 7, phase: 'Jornada 1', group: 'C',
-        home: 'Haitíí', homeFlag: '🇭🇹',
+        home: 'Haití', homeFlag: '🇭🇹',
         away: 'Escocia', awayFlag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
         time: 'Sáb 13-Jun, 8:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
@@ -158,7 +158,7 @@ const allMatchesData = [
     {
         id: 23, phase: 'Jornada 1', group: 'L',
         home: 'Ghana', homeFlag: '🇬🇭',
-        away: 'Panamáá', awayFlag: '🇵🇦',
+        away: 'Panamá', awayFlag: '🇵🇦',
         time: 'Mié 17-Jun, 6:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
     },
@@ -185,7 +185,7 @@ const allMatchesData = [
     },
     {
         id: 27, phase: 'Jornada 2', group: 'B',
-        home: 'Canadáá', homeFlag: '🇨🇦',
+        home: 'Canadá', homeFlag: '🇨🇦',
         away: 'Catar', awayFlag: '🇶🇦',
         time: 'Jue 18-Jun, 5:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
@@ -214,7 +214,7 @@ const allMatchesData = [
     {
         id: 31, phase: 'Jornada 2', group: 'C',
         home: 'Brasil', homeFlag: '🇧🇷',
-        away: 'Haitíí', awayFlag: '🇭🇹',
+        away: 'Haití', awayFlag: '🇭🇹',
         time: 'Vie 19-Jun, 8:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
     },
@@ -325,7 +325,7 @@ const allMatchesData = [
     },
     {
         id: 47, phase: 'Jornada 2', group: 'L',
-        home: 'Panamáá', homeFlag: '🇵🇦',
+        home: 'Panamá', homeFlag: '🇵🇦',
         away: 'Croacia', awayFlag: '🇭🇷',
         time: 'Mar 23-Jun, 6:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
@@ -340,7 +340,7 @@ const allMatchesData = [
     {
         id: 49, phase: 'Jornada 3', group: 'B',
         home: 'Suiza', homeFlag: '🇨🇭',
-        away: 'Canadáá', awayFlag: '🇨🇦',
+        away: 'Canadá', awayFlag: '🇨🇦',
         time: 'Mié 24-Jun, 2:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
     },
@@ -354,7 +354,7 @@ const allMatchesData = [
     {
         id: 51, phase: 'Jornada 3', group: 'C',
         home: 'Marruecos', homeFlag: '🇲🇦',
-        away: 'Haitíí', awayFlag: '🇭🇹',
+        away: 'Haití', awayFlag: '🇭🇹',
         time: 'Mié 24-Jun, 5:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
     },
@@ -465,7 +465,7 @@ const allMatchesData = [
     },
     {
         id: 67, phase: 'Jornada 3', group: 'L',
-        home: 'Panamáá', homeFlag: '🇵🇦',
+        home: 'Panamá', homeFlag: '🇵🇦',
         away: 'Inglaterra', awayFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
         time: 'Sáb 27-Jun, 4:00 PM', status: 'scheduled',
         realHome: null, realAway: null, isTBD: false
