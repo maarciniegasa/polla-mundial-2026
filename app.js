@@ -96,6 +96,8 @@ function getLockLabel(match) {
 let currentUser = null;
 let authMode = 'login';
 let authReady = false;
+let currentGroupId = null;
+let allGroups = {};
 
 window.toggleAuthMode = function(mode) {
     authMode = mode;
@@ -135,7 +137,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
             }
 
             await db.collection('users').doc(emailId(email)).set({
-                email, name,
+                email, name, groups: [],
                 role: email === ADMIN_EMAIL ? 'admin' : 'player',
                 isApproved: email === ADMIN_EMAIL,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -179,6 +181,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
 async function loginUser(user) {
     currentUser = user;
     await initDB();
+    await initGroups();
 
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('main-app').style.display = 'flex';
@@ -186,12 +189,14 @@ async function loginUser(user) {
 
     const adminNav   = document.getElementById('nav-admin');
     const usersNav   = document.getElementById('nav-users');
+    const groupsNav  = document.getElementById('nav-groups');
     const pendingNav = document.getElementById('nav-pending');
     const navBtnsArr = Array.from(document.querySelectorAll('.nav-btn'));
 
     if (user.role === 'admin') {
         adminNav.style.display   = 'inline-block';
         usersNav.style.display   = 'inline-block';
+        groupsNav.style.display  = 'inline-block';
         pendingNav.style.display = 'none';
         navBtnsArr.forEach(btn => {
             if (btn.id !== 'nav-pending') btn.style.display = 'inline-block';
@@ -201,6 +206,7 @@ async function loginUser(user) {
     } else {
         adminNav.style.display = 'none';
         usersNav.style.display = 'none';
+        groupsNav.style.display = 'none';
         if (!user.isApproved) {
             navBtnsArr.forEach(btn => btn.style.display = 'none');
             pendingNav.style.display = 'inline-block';
@@ -222,6 +228,148 @@ window.logout = async function() {
     currentUser = null;
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('main-app').style.display = 'none';
+};
+
+// --- GROUPS LOGIC ---
+async function initGroups() {
+    const groupsSnap = await db.collection('groups').orderBy('createdAt').get();
+    allGroups = {};
+    groupsSnap.docs.forEach(d => { allGroups[d.id] = d.data(); });
+
+    const selector = document.getElementById('group-selector');
+    selector.innerHTML = '';
+
+    const userGroups = currentUser.role === 'admin'
+        ? Object.keys(allGroups)
+        : (currentUser.groups || []);
+
+    if (userGroups.length === 0) {
+        selector.style.display = 'none';
+        currentGroupId = null;
+        return;
+    }
+
+    userGroups.forEach(gid => {
+        const grp = allGroups[gid];
+        if (grp) {
+            const opt = document.createElement('option');
+            opt.value = gid;
+            opt.textContent = grp.name;
+            selector.appendChild(opt);
+        }
+    });
+
+    if (userGroups.length > 1) selector.style.display = 'inline-block';
+    else selector.style.display = 'none';
+
+    currentGroupId = userGroups[0] || null;
+    selector.value = currentGroupId || '';
+}
+
+window.onGroupChange = function() {
+    currentGroupId = document.getElementById('group-selector').value || null;
+    if (document.getElementById('leaderboard').classList.contains('active')) {
+        updateLeaderboard();
+    }
+};
+
+window.createGroup = async function() {
+    const input = document.getElementById('new-group-name');
+    const name = input.value.trim();
+    if (!name) { alert('Ingresa un nombre para el grupo.'); return; }
+
+    try {
+        const ref = await db.collection('groups').add({
+            name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // Auto-assign admin to the new group
+        const adminRef = db.collection('users').doc(emailId(currentUser.email));
+        await adminRef.update({
+            groups: firebase.firestore.FieldValue.arrayUnion(ref.id)
+        });
+        input.value = '';
+        await renderGroupsView();
+        await initGroups();
+    } catch(err) {
+        alert('Error al crear grupo.');
+        console.error(err);
+    }
+};
+
+window.deleteGroup = async function(groupId) {
+    if (!confirm('¿Eliminar este grupo? Los usuarios perderán la asignación.')) return;
+    try {
+        // Remove group from all users
+        const usersSnap = await db.collection('users').get();
+        const batch = db.batch();
+        usersSnap.docs.forEach(d => {
+            if (d.data().groups && d.data().groups.includes(groupId)) {
+                batch.update(d.ref, {
+                    groups: firebase.firestore.FieldValue.arrayRemove(groupId)
+                });
+            }
+        });
+        batch.delete(db.collection('groups').doc(groupId));
+        await batch.commit();
+        await renderGroupsView();
+        await initGroups();
+    } catch(err) {
+        alert('Error al eliminar grupo.');
+        console.error(err);
+    }
+};
+
+window.renderGroupsView = async function() {
+    const container = document.getElementById('groups-list');
+    if (!container) return;
+    container.innerHTML = '<p style="color:#888;">Cargando...</p>';
+
+    try {
+        const snap = await db.collection('groups').orderBy('createdAt').get();
+        container.innerHTML = '';
+        if (snap.empty) {
+            container.innerHTML = '<p style="color:#888;">No hay grupos creados aún.</p>';
+            return;
+        }
+        snap.docs.forEach(d => {
+            const g = d.data();
+            const card = document.createElement('div');
+            card.className = 'group-card';
+            card.innerHTML = `
+                <span class="group-card-name">${g.name}</span>
+                <div class="group-card-actions">
+                    <span style="color:var(--text-muted);font-size:0.8rem;">ID: ${d.id}</span>
+                    <button class="btn-small danger" onclick="deleteGroup('${d.id}')">Eliminar</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch(err) {
+        container.innerHTML = '<p style="color:#ef4444;">Error al cargar grupos.</p>';
+        console.error(err);
+    }
+};
+
+window.addUserToGroup = async function(email, groupId) {
+    try {
+        const ref = db.collection('users').doc(emailId(email));
+        await ref.update({ groups: firebase.firestore.FieldValue.arrayUnion(groupId) });
+        await renderUsersView();
+    } catch(err) {
+        alert('Error al asignar grupo.');
+        console.error(err);
+    }
+};
+
+window.removeUserFromGroup = async function(email, groupId) {
+    try {
+        const ref = db.collection('users').doc(emailId(email));
+        await ref.update({ groups: firebase.firestore.FieldValue.arrayRemove(groupId) });
+        await renderUsersView();
+    } catch(err) {
+        alert('Error al quitar grupo.');
+        console.error(err);
+    }
 };
 
 // --- SESSION RESTORE (Firebase Auth persistence automática) ---
@@ -258,6 +406,7 @@ navBtns.forEach(btn => {
         btn.classList.add('active');
         document.getElementById(btn.dataset.target).classList.add('active');
         if (btn.dataset.target === 'users' && currentUser?.role === 'admin') await renderUsersView();
+        if (btn.dataset.target === 'groups' && currentUser?.role === 'admin') await renderGroupsView();
         if (btn.dataset.target === 'leaderboard') await updateLeaderboard();
     });
 });
@@ -407,13 +556,34 @@ function calculatePointsForPrediction(predH, predA, realH, realA) {
 
 async function updateLeaderboard() {
     try {
+        // Update header with current group name
+        const groupName = currentGroupId && allGroups[currentGroupId]
+            ? allGroups[currentGroupId].name : 'Global';
+        const lbHeader = document.querySelector('#leaderboard .section-header h2');
+        if (lbHeader) {
+            lbHeader.textContent = currentGroupId && allGroups[currentGroupId]
+                ? `🏆 ${groupName}` : '🏆 Tabla de Posiciones';
+        }
+        const lbSub = document.querySelector('#leaderboard .section-header p');
+        if (lbSub) {
+            lbSub.textContent = currentGroupId
+                ? `Posiciones del grupo: ${groupName}`
+                : 'Selecciona o crea un grupo para ver las posiciones.';
+        }
+
         const [usersSnap, finishedSnap, predsSnap] = await Promise.all([
             db.collection('users').get(),
             db.collection('matches').where('status', '==', 'finished').get(),
             db.collection('predictions').get()
         ]);
 
-        const users          = usersSnap.docs.map(d => d.data());
+        let users = usersSnap.docs.map(d => d.data());
+
+        // Filter by selected group
+        if (currentGroupId) {
+            users = users.filter(u => u.groups && u.groups.includes(currentGroupId));
+        }
+
         const finishedMatches = finishedSnap.docs.map(d => d.data());
         const allPreds       = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
@@ -456,13 +626,21 @@ async function updateLeaderboard() {
 window.renderUsersView = async function() {
     const tbody = document.getElementById('users-body');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#888;">Cargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#888;">Cargando...</td></tr>';
 
     try {
-        const usersSnap = await db.collection('users').orderBy('createdAt').get();
+        const [usersSnap, groupsSnap] = await Promise.all([
+            db.collection('users').orderBy('createdAt').get(),
+            db.collection('groups').get()
+        ]);
+
+        const groups = {};
+        groupsSnap.docs.forEach(d => { groups[d.id] = d.data().name; });
+
         tbody.innerHTML = '';
         usersSnap.docs.forEach(doc => {
             const u = doc.data();
+            const userGroups = u.groups || [];
             const statusBadge = u.isApproved
                 ? '<span style="color:var(--accent-green);font-weight:bold;">✅ Aprobado</span>'
                 : '<span style="color:var(--accent-red);font-weight:bold;">⏳ Pendiente</span>';
@@ -472,18 +650,38 @@ window.renderUsersView = async function() {
                      ${u.isApproved ? 'Revocar' : 'Aprobar'}
                    </button>`;
 
+            // Groups badges + assignment UI
+            let groupsHtml = '<div class="group-selector-wrap">';
+            userGroups.forEach(gid => {
+                if (groups[gid]) {
+                    groupsHtml += `<span class="group-badge">${groups[gid]} <span style="cursor:pointer;color:var(--accent-red);" onclick="removeUserFromGroup('${u.email}','${gid}')">✕</span></span>`;
+                }
+            });
+            if (Object.keys(groups).length > 0) {
+                groupsHtml += `<select class="group-select" style="font-size:0.75rem;padding:0.15rem 0.3rem;" onchange="addUserToGroup('${u.email}', this.value); this.value=''">
+                    <option value="">+ Grupo</option>`;
+                Object.entries(groups).forEach(([gid, gname]) => {
+                    if (!userGroups.includes(gid)) {
+                        groupsHtml += `<option value="${gid}">${gname}</option>`;
+                    }
+                });
+                groupsHtml += `</select>`;
+            }
+            groupsHtml += '</div>';
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${u.name}</td>
                 <td>${u.email}</td>
                 <td>${u.role}</td>
+                <td>${groupsHtml}</td>
                 <td>${statusBadge}</td>
                 <td>${actionBtn}</td>
             `;
             tbody.appendChild(tr);
         });
     } catch(err) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#ef4444;">Error al cargar usuarios.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ef4444;">Error al cargar usuarios.</td></tr>';
         console.error(err);
     }
 };

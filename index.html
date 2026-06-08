@@ -49,11 +49,15 @@
                 <button class="nav-btn" data-target="leaderboard">Posiciones</button>
                 <button class="nav-btn" id="nav-admin" data-target="admin" style="display: none;">Admin</button>
                 <button class="nav-btn" id="nav-users" data-target="users" style="display: none;">Usuarios</button>
+                <button class="nav-btn" id="nav-groups" data-target="groups" style="display: none;">Grupos</button>
                 <button class="nav-btn" id="nav-pending" data-target="pending" style="display: none;">Estado</button>
             </nav>
-            <div class="user-profile">
+            <div class="header-controls">
+                <select id="group-selector" class="group-select" onchange="onGroupChange()" style="display: none;"></select>
+                <div class="user-profile">
                 <span id="current-user-name">Usuario</span>
                 <button onclick="logout()" class="btn-logout">Salir</button>
+            </div>
             </div>
         </header>
 
@@ -141,6 +145,7 @@
                                 <th>Nombre</th>
                                 <th>Correo</th>
                                 <th>Rol</th>
+                                <th>Grupos</th>
                                 <th>Estado</th>
                                 <th>Acción</th>
                             </tr>
@@ -148,6 +153,19 @@
                         <tbody id="users-body"></tbody>
                     </table>
                 </div>
+            </section>
+
+            <!-- Groups Section -->
+            <section id="groups" class="view-section">
+                <header class="section-header">
+                    <h2>Gestión de Grupos</h2>
+                    <p>Crea grupos para organizar las pollas (Ej: Familia, Trabajo).</p>
+                </header>
+                <div class="groups-create">
+                    <input type="text" id="new-group-name" placeholder="Nombre del grupo">
+                    <button class="btn-save" onclick="createGroup()">Crear Grupo</button>
+                </div>
+                <div id="groups-list" class="groups-list"></div>
             </section>
 
             <!-- Pending Section -->

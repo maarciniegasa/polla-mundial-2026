@@ -135,3 +135,82 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
     font-size: 1.1rem;
     font-weight: 400;
 }
+
+/* === GROUP SELECTOR === */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.group-select {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+.group-select:focus { border-color: var(--accent-green); }
+
+/* === GROUPS ADMIN === */
+.groups-create {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    max-width: 400px;
+}
+.groups-create input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+}
+.groups-create input:focus { outline: none; border-color: var(--accent-green); }
+.groups-create .btn-save { margin-top: 0; padding: 0.7rem 1.2rem; }
+.groups-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.group-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.group-card-name { font-weight: 600; font-size: 1rem; }
+.group-card-actions { display: flex; gap: 0.5rem; align-items: center; }
+.group-badge {
+    display: inline-block;
+    background: rgba(16,185,129,0.15);
+    color: var(--accent-green);
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin: 0.1rem 0.2rem;
+    white-space: nowrap;
+}
+.group-selector-wrap {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.btn-small {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: var(--text-muted);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-small:hover { background: rgba(255,255,255,0.15); }
+.btn-small.danger { color: var(--accent-red); }
+.btn-small.danger:hover { background: rgba(239,68,68,0.2); }
