@@ -50,19 +50,20 @@ function hideLoading() {
 function parseMatchTime(timeStr) {
     const monthMap = {
         'Enero': 0, 'Febrero': 1, 'Marzo': 2, 'Abril': 3, 'Mayo': 4, 'Junio': 5,
-        'Julio': 6, 'Agosto': 7, 'Septiembre': 8, 'Octubre': 9, 'Noviembre': 10, 'Diciembre': 11
+        'Julio': 6, 'Agosto': 7, 'Septiembre': 8, 'Octubre': 9, 'Noviembre': 10, 'Diciembre': 11,
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
     };
-    const m = timeStr.match(/(\w+)\s+(\d+),\s*(\d+):(\d+)\s*(a|p)\./i);
+    const m = timeStr.match(/(\w+)\s+(\d+)-([A-Za-z]+),\s*(\d+):(\d+)\s*(a|p)\.?/i);
     if (!m) return null;
-    const month = monthMap[m[1]];
+    const month = monthMap[m[3]];
     if (month === undefined) return null;
     const day = parseInt(m[2]);
-    let hour = parseInt(m[3]);
-    const minute = parseInt(m[4]);
-    const isPM = m[5].toLowerCase() === 'p';
+    let hour = parseInt(m[4]);
+    const minute = parseInt(m[5]);
+    const isPM = m[6].toLowerCase() === 'p';
     if (isPM && hour !== 12) hour += 12;
     if (!isPM && hour === 12) hour = 0;
-    // COT = UTC-5 → convert to UTC by adding 5 hours
     return new Date(Date.UTC(2026, month, day, hour + 5, minute, 0));
 }
 
