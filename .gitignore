@@ -1,0 +1,6 @@
+node_modules/
+.env
+*.xlsx
+Firebase.txt
+update_data.py
+update_from_excel.py
