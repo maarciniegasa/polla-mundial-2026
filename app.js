@@ -203,22 +203,22 @@ async function loginUser(user) {
         });
         document.querySelector('[data-target="predictions"]').click();
         await renderUsersView();
-    } else {
-        adminNav.style.display = 'none';
-        usersNav.style.display = 'none';
-        groupsNav.style.display = 'none';
-        if (!user.isApproved) {
-            navBtnsArr.forEach(btn => btn.style.display = 'none');
-            pendingNav.style.display = 'inline-block';
-            pendingNav.click();
         } else {
-            navBtnsArr.forEach(btn => {
-                const hide = ['nav-admin', 'nav-users', 'nav-pending'];
-                btn.style.display = hide.includes(btn.id) ? 'none' : 'inline-block';
-            });
-            document.querySelector('[data-target="predictions"]').click();
+            adminNav.style.display = 'none';
+            usersNav.style.display = 'none';
+            groupsNav.style.display = 'none';
+            if (!user.isApproved) {
+                navBtnsArr.forEach(btn => btn.style.display = 'none');
+                pendingNav.style.display = 'inline-block';
+                pendingNav.click();
+            } else {
+                navBtnsArr.forEach(btn => {
+                    const hide = ['nav-admin', 'nav-users', 'nav-groups', 'nav-pending'];
+                    btn.style.display = hide.includes(btn.id) ? 'none' : 'inline-block';
+                });
+                document.querySelector('[data-target="predictions"]').click();
+            }
         }
-    }
     await renderMatchesView();
     await updateLeaderboard();
 }
