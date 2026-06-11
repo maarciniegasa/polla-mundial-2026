@@ -45,7 +45,8 @@
                 <h1>Mundial 2026</h1>
             </div>
             <nav class="app-nav">
-                <button class="nav-btn active" data-target="predictions">Predicciones</button>
+                <button class="nav-btn active" data-target="predictions">Predicción marcador</button>
+                <button class="nav-btn" data-target="group-predictions">Predicción clasificados</button>
                 <button class="nav-btn" data-target="leaderboard">Posiciones</button>
                 <button class="nav-btn" id="nav-admin" data-target="admin" style="display: none;">Admin</button>
                 <button class="nav-btn" id="nav-users" data-target="users" style="display: none;">Usuarios</button>
@@ -65,7 +66,7 @@
             <!-- Predicciones Section -->
             <section id="predictions" class="view-section active">
                 <header class="section-header">
-                    <h2>Tus Predicciones</h2>
+                    <h2>Predicción Marcador</h2>
                     <p>Ingresa tus resultados antes de que comience cada partido.</p>
                 </header>
                 
@@ -85,6 +86,15 @@
                 </div>
 
                 <div id="matches-container" class="matches-grid"></div>
+            </section>
+
+            <!-- Predicción Clasificados Section -->
+            <section id="group-predictions" class="view-section">
+                <header class="section-header">
+                    <h2>Predicción Clasificados</h2>
+                    <p>Selecciona el 1.º y 2.º clasificado de cada grupo. Cierra 30 min antes del primer partido de cada grupo.</p>
+                </header>
+                <div id="group-predictions-container" class="matches-grid"></div>
             </section>
 
             <!-- Leaderboard Section -->
@@ -130,6 +140,10 @@
                 </div>
 
                 <div id="admin-matches-container" class="matches-grid"></div>
+
+                <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+                    <div id="admin-group-predictions-container"></div>
+                </div>
             </section>
 
             <!-- Users Admin Section -->

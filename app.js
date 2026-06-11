@@ -92,6 +92,34 @@ function getLockLabel(match) {
     return match.time;
 }
 
+// --- GROUP PREDICTION LOGIC ---
+function getGroupLockInfo(groupId) {
+    const firstMatchStr = GROUP_FIRST_MATCH[groupId];
+    if (!firstMatchStr) return { locked: false, warning: false, label: 'Sin fecha', cutoff: null, kickoff: null };
+    const kickoff = new Date(firstMatchStr);
+    const cutoff = new Date(kickoff.getTime() - 30 * 60 * 1000);
+    const warningTime = new Date(kickoff.getTime() - 2 * 60 * 60 * 1000);
+    const now = Date.now();
+    return {
+        locked: now >= cutoff.getTime(),
+        warning: now >= warningTime.getTime() && now < cutoff.getTime(),
+        label: now >= kickoff.getTime() ? 'Fase de grupos finalizada'
+            : now >= cutoff.getTime() ? `🔒 CERRADO (${Math.ceil((kickoff.getTime() - now) / 60000)} min)`
+            : now >= warningTime.getTime() ? `⏰ Cierra en ${Math.ceil((cutoff.getTime() - now) / 60000)} min`
+            : `⏱ Cierra en ${Math.ceil((cutoff.getTime() - now) / 60000)} min`,
+        cutoff,
+        kickoff
+    };
+}
+
+function calculateGroupPredictionPoints(predFirst, predSecond, realFirst, realSecond) {
+    if (!predFirst || !predSecond || !realFirst || !realSecond) return { pts: 0, exact: 0 };
+    if (predFirst === realFirst && predSecond === realSecond) return { pts: 5, exact: 1 };
+    if (predFirst === realSecond && predSecond === realFirst) return { pts: 2, exact: 0 };
+    if (predFirst === realFirst || predFirst === realSecond || predSecond === realFirst || predSecond === realSecond) return { pts: 1, exact: 0 };
+    return { pts: 0, exact: 0 };
+}
+
 // --- AUTH LOGIC (Firebase Authentication) ---
 let currentUser = null;
 let authMode = 'login';
@@ -408,6 +436,8 @@ navBtns.forEach(btn => {
         if (btn.dataset.target === 'users' && currentUser?.role === 'admin') await renderUsersView();
         if (btn.dataset.target === 'groups' && currentUser?.role === 'admin') await renderGroupsView();
         if (btn.dataset.target === 'leaderboard') await updateLeaderboard();
+        if (btn.dataset.target === 'group-predictions') await renderGroupPredictionsView();
+        if (btn.dataset.target === 'admin' && currentUser?.role === 'admin') await renderAdminGroupPredictionsView();
     });
 });
 
@@ -501,6 +531,108 @@ function createMatchCard(match, myPred, isAdmin) {
     return card;
 }
 
+// --- GROUP PREDICTIONS VIEW ---
+window.renderGroupPredictionsView = async function() {
+    if (!currentUser) return;
+    const container = document.getElementById('group-predictions-container');
+    container.innerHTML = '<p style="color:#888;text-align:center;padding:2rem;">Cargando...</p>';
+
+    try {
+        const [predSnap] = await Promise.all([
+            db.collection('groupPredictions').doc(emailId(currentUser.email)).get()
+        ]);
+
+        const myPreds = predSnap.exists ? predSnap.data() : {};
+        const groups = Object.keys(GROUP_TEAMS).sort();
+
+        container.innerHTML = '';
+        groups.forEach(groupId => {
+            const teams = GROUP_TEAMS[groupId];
+            const lockInfo = getGroupLockInfo(groupId);
+            const myPred = myPreds[groupId] || {};
+            container.appendChild(createGroupPredictionCard(groupId, teams, myPred, lockInfo));
+        });
+    } catch(err) {
+        container.innerHTML = '<p style="color:#ef4444;text-align:center;padding:2rem;">Error al cargar.</p>';
+        console.error(err);
+    }
+};
+
+function createGroupPredictionCard(groupId, teams, myPred, lockInfo) {
+    const card = document.createElement('div');
+    card.className = `group-pred-card${lockInfo.locked ? ' locked' : ''}`;
+
+    let statusClass = 'open';
+    if (lockInfo.locked) statusClass = 'locked';
+    else if (lockInfo.warning) statusClass = 'warning';
+    if (lockInfo.kickoff && Date.now() >= lockInfo.kickoff.getTime()) statusClass = 'finished';
+
+    const disabled = lockInfo.locked ? 'disabled' : '';
+    const hasPred = myPred.first && myPred.second;
+    const savedLabel = hasPred && lockInfo.locked ? '🔒 Predicción guardada' : (hasPred ? '✅ Predicción guardada' : '');
+
+    const firstOptions = teams.map(t => `<option value="${t}"${myPred.first === t ? ' selected' : ''}>${t}</option>`).join('');
+    const secondOptions = teams.map(t => `<option value="${t}"${myPred.second === t ? ' selected' : ''}>${t}</option>`).join('');
+
+    let actionButton;
+    if (lockInfo.locked) {
+        actionButton = `<button class="btn-save-group" disabled style="opacity:0.5;cursor:not-allowed;">${savedLabel || '🔒 Predicciones cerradas'}</button>`;
+    } else {
+        actionButton = `<button class="btn-save-group" onclick="saveGroupPrediction('${groupId}')">Guardar Predicción</button>`;
+    }
+
+    card.innerHTML = `
+        <div class="group-pred-header">
+            <span class="group-pred-title">Grupo ${groupId}</span>
+            <span class="group-pred-status ${statusClass}">${lockInfo.label}</span>
+        </div>
+        <div class="group-pred-teams">
+            <div class="group-pred-select-wrap">
+                <span class="group-pred-label">1.º Clasificado</span>
+                <select class="group-pred-select" data-group="${groupId}" data-position="first" ${disabled}>
+                    <option value="">Seleccionar...</option>
+                    ${firstOptions}
+                </select>
+            </div>
+            <div class="group-pred-select-wrap">
+                <span class="group-pred-label">2.º Clasificado</span>
+                <select class="group-pred-select" data-group="${groupId}" data-position="second" ${disabled}>
+                    <option value="">Seleccionar...</option>
+                    ${secondOptions}
+                </select>
+            </div>
+        </div>
+        <div class="group-pred-actions">${actionButton}</div>
+    `;
+    return card;
+}
+
+window.saveGroupPrediction = async (groupId) => {
+    const firstSelect = document.querySelector(`.group-pred-select[data-group="${groupId}"][data-position="first"]`);
+    const secondSelect = document.querySelector(`.group-pred-select[data-group="${groupId}"][data-position="second"]`);
+    const first = firstSelect.value;
+    const second = secondSelect.value;
+
+    if (!first || !second) { alert('Debes seleccionar ambos clasificados.'); return; }
+    if (first === second) { alert('El 1.º y 2.º clasificado deben ser equipos diferentes.'); return; }
+
+    const lockInfo = getGroupLockInfo(groupId);
+    if (lockInfo.locked) { alert('El plazo para este grupo ya cerró.'); return; }
+
+    try {
+        await db.collection('groupPredictions').doc(emailId(currentUser.email)).set(
+            { [groupId]: { first, second } },
+            { merge: true }
+        );
+        alert('✅ Predicción de clasificados guardada exitosamente.');
+        await renderGroupPredictionsView();
+        await updateLeaderboard();
+    } catch(err) {
+        alert('Error al guardar. Revisa tu conexión.');
+        console.error(err);
+    }
+};
+
 // --- SAVE PREDICTION ---
 window.savePrediction = async (matchId) => {
     const inputs = document.querySelectorAll(`.pred-input[data-match="${matchId}"]`);
@@ -571,10 +703,12 @@ async function updateLeaderboard() {
                 : 'Selecciona o crea un grupo para ver las posiciones.';
         }
 
-        const [usersSnap, finishedSnap, predsSnap] = await Promise.all([
+        const [usersSnap, finishedSnap, predsSnap, groupPredsSnap, groupResultsSnap] = await Promise.all([
             db.collection('users').get(),
             db.collection('matches').where('status', '==', 'finished').get(),
-            db.collection('predictions').get()
+            db.collection('predictions').get(),
+            db.collection('groupPredictions').get(),
+            db.collection('groupResults').doc('results').get()
         ]);
 
         let users = usersSnap.docs.map(d => d.data());
@@ -587,6 +721,9 @@ async function updateLeaderboard() {
         const finishedMatches = finishedSnap.docs.map(d => d.data());
         const allPreds       = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
+        const allGroupPreds  = {};
+        groupPredsSnap.docs.forEach(d => { allGroupPreds[d.id] = d.data(); });
+        const groupResults = groupResultsSnap.exists ? groupResultsSnap.data() : {};
 
         const scores = users.map(u => {
             let pts = 0, exact = 0;
@@ -598,6 +735,20 @@ async function updateLeaderboard() {
                     pts += res.pts; exact += res.exact;
                 }
             });
+
+            // Add group prediction points
+            const uGroupPreds = allGroupPreds[emailId(u.email)] || {};
+            let groupExact = 0;
+            Object.entries(uGroupPreds).forEach(([groupId, pred]) => {
+                const real = groupResults[groupId];
+                if (real && real.first && real.second) {
+                    const res = calculateGroupPredictionPoints(pred.first, pred.second, real.first, real.second);
+                    pts += res.pts;
+                    groupExact += res.exact;
+                }
+            });
+            exact += groupExact;
+
             return { name: u.name, email: u.email, pts, exact };
         });
 

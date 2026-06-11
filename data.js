@@ -1,5 +1,95 @@
 // data.js - Datos extraidos del Excel Mundial_FIFA_2026_Colombia.xlsx
 
+const GROUP_TEAMS = {
+  "A": [
+    "Corea del Sur",
+    "México",
+    "República Checa",
+    "Sudáfrica"
+  ],
+  "B": [
+    "Bosnia y Herzegovina",
+    "Canadá",
+    "Catar",
+    "Suiza"
+  ],
+  "C": [
+    "Brasil",
+    "Escocia",
+    "Haití",
+    "Marruecos"
+  ],
+  "D": [
+    "Australia",
+    "EE.UU.",
+    "Paraguay",
+    "Turquía"
+  ],
+  "E": [
+    "Alemania",
+    "Costa de Marfil",
+    "Curazao",
+    "Ecuador"
+  ],
+  "F": [
+    "Japón",
+    "Países Bajos",
+    "Suecia",
+    "Túnez"
+  ],
+  "G": [
+    "Bélgica",
+    "Egipto",
+    "Irán",
+    "Nueva Zelanda"
+  ],
+  "H": [
+    "Arabia Saudita",
+    "Cabo Verde",
+    "España",
+    "Uruguay"
+  ],
+  "I": [
+    "Francia",
+    "Irak",
+    "Noruega",
+    "Senegal"
+  ],
+  "J": [
+    "Argelia",
+    "Argentina",
+    "Austria",
+    "Jordania"
+  ],
+  "K": [
+    "Colombia",
+    "Portugal",
+    "República del Congo",
+    "Uzbekistán"
+  ],
+  "L": [
+    "Croacia",
+    "Ghana",
+    "Inglaterra",
+    "Panamá"
+  ]
+};
+
+const GROUP_FIRST_MATCH = {
+  "A": "2026-06-11T19:00:00.000Z",
+  "B": "2026-06-12T19:00:00.000Z",
+  "C": "2026-06-13T22:00:00.000Z",
+  "D": "2026-06-13T01:00:00.000Z",
+  "E": "2026-06-14T17:00:00.000Z",
+  "F": "2026-06-14T20:00:00.000Z",
+  "G": "2026-06-15T19:00:00.000Z",
+  "H": "2026-06-15T16:00:00.000Z",
+  "I": "2026-06-16T19:00:00.000Z",
+  "J": "2026-06-17T01:00:00.000Z",
+  "K": "2026-06-17T17:00:00.000Z",
+  "L": "2026-06-17T20:00:00.000Z"
+};
+
 const allMatchesData = [
     {
         id: 1, phase: 'Jornada 1', group: 'A',
