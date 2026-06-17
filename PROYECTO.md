@@ -28,21 +28,36 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - ✅ Estados visuales: `⏱ Cierra en X min`, `🔒 CERRADO`, `🔴 EN JUEGO`, `✅ FINALIZADO`
 - ✅ Filtro por fase/jornada
 
+### Predicción Clasificados (NUEVO)
+- ✅ Pestaña "Predicción clasificados" para seleccionar 1.º y 2.º por grupo (12 grupos A-L)
+- ✅ Equipos por grupo desde `GROUP_TEAMS` en data.js (extraídos del Excel oficial)
+- ✅ Deadline independiente por grupo: **30 min antes** del 1er partido del grupo
+- ✅ Advertencia **2 horas antes** con countdown visual (`⏰ Cierra en X min`)
+- ✅ Estados: `⏱ Cierra en X min` → `⏰ Cierra en X min` (warning) → `🔒 CERRADO` → `Fase de grupos finalizada`
+- ✅ Guardado por grupo individual en colección `groupPredictions`
+
 ### Panel Admin
 - ✅ Ingreso de resultados oficiales
 - ✅ Recalculo automático de puntos al guardar resultado
 - ✅ Vista de todos los partidos por fase
+- ✅ **Sección "Resultados Reales - Fase de Grupos"** para ingresar 1.º y 2.º real por grupo
+- ✅ Tabla de predicciones de todos los jugadores con puntos calculados por grupo
 
 ### Sistema de Puntos
-- ✅ **3 puntos**: resultado exacto (ej. 1-1 vs 1-1)
-- ✅ **1 punto**: acertar ganador/empate (ej. 0-0 vs 1-1 → empate)
-- ✅ **0 puntos**: fallar resultado
-- ✅ Desempate: más resultados exactos
+- ✅ **3 puntos**: resultado exacto marcador (ej. 1-1 vs 1-1)
+- ✅ **1 punto**: acertar ganador/empate marcador (ej. 0-0 vs 1-1 → empate)
+- ✅ **0 puntos**: fallar resultado marcador
+- ✅ **5 puntos**: 1.º y 2.º clasificados exactos (orden correcto)
+- ✅ **2 puntos**: mismos 2 equipos clasificados, orden invertido
+- ✅ **1 punto**: solo 1 de los 2 equipos clasificados correcto (cualquier posición)
+- ✅ **0 puntos**: ningún equipo clasificado correcto
+- ✅ Desempate global: más resultados exactos (marcador 3pts + clasificados 5pts)
 
 ### Leaderboard
 - ✅ Tabla global y por grupo
 - ✅ Orden: puntos descendente → exactos descendente
 - ✅ Resaltado del usuario actual
+- ✅ **Puntos combinados**: marcador + clasificados
 
 ## Estructura de Datos (Firestore)
 
@@ -51,6 +66,8 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 |-----------|--------------|-------------------|
 | `matches` | `1`...`104` | `id, phase, group, home, away, time, status, realHome, realAway, isTBD` |
 | `predictions` | `emailId(user)` | `{ [matchId]: { h, a } }` |
+| `groupPredictions` | `emailId(user)` | `{ [groupId]: { first, second } }` |
+| `groupResults` | `results` (single doc) | `{ [groupId]: { first, second } }` |
 | `users` | `emailId(user)` | `email, name, role, groups[], isApproved, createdAt` |
 | `groups` | `auto-id` | `name, createdAt` |
 | `config` | `app` | `matchesSeeded, seededAt` |
@@ -69,7 +86,7 @@ mundial/
 
 ## Reglas de Negocio Clave
 
-### Bloqueo de Predicciones
+### Bloqueo de Predicciones (Marcador)
 ```javascript
 // En app.js:50-76
 const cutoff = new Date(kickoff.getTime() - 30 * 60 * 1000); // -30 min
@@ -78,13 +95,39 @@ return Date.now() >= cutoff.getTime();
 - Hora del partido en `data.js`: hora local Colombia (UTC-5)
 - Conversión a UTC: `hour + 5` en `parseMatchTime()`
 
-### Cálculo de Puntos
+### Bloqueo de Predicciones (Clasificados)
 ```javascript
-// En app.js:549-555
-getOutcome(h, a) → 'H' | 'A' | 'D'
-calculatePointsForPrediction(predH, predA, realH, realA)
+// En app.js: getGroupLockInfo()
+const kickoff = new Date(GROUP_FIRST_MATCH[groupId]);     // UTC del 1er partido del grupo
+const cutoff = new Date(kickoff.getTime() - 30 * 60 * 1000); // -30 min
+const warning = new Date(kickoff.getTime() - 2 * 60 * 60 * 1000); // -2h
 ```
-- Empate predicho (0-0) vs real (1-1) = **1 punto** ✓
+- `GROUP_FIRST_MATCH` en `data.js`: timestamps UTC del 1er partido por grupo (extraídos del Excel)
+- Deadline **independiente por grupo** (cada grupo cierra según su primer partido)
+- Warning **2h antes** del deadline por grupo
+- Comparación en UTC (`Date.now()`) → funciona en cualquier zona horaria
+
+### Cálculo de Puntos (Marcador)
+```javascript
+// En app.js: calculatePointsForPrediction()
+getOutcome(h, a) → 'H' | 'A' | 'D'
+```
+- **3 pts**: marcador exacto
+- **1 pt**: ganador/empate correcto
+- **0 pts**: fallado
+
+### Cálculo de Puntos (Clasificados)
+```javascript
+// En app.js: calculateGroupPredictionPoints()
+```
+| Acierto | Puntos | Exacto |
+|---------|--------|--------|
+| 1.º y 2.º exactos (orden) | 5 | ✅ |
+| Mismos 2 equipos, orden invertido | 2 | ❌ |
+| Solo 1 equipo correcto (cualquier posición) | 1 | ❌ |
+| Ninguno | 0 | ❌ |
+
+- Desempate global: suma de `exact` (marcador 3pts + clasificados 5pts)
 
 ## Despliegue
 ```bash
@@ -108,3 +151,5 @@ Configurar en dashboard de Vercel:
 - [ ] Exportar leaderboard a CSV/PDF
 - [ ] Tests automatizados
 - [ ] PWA (offline support)
+- [ ] Notificaciones automáticas 2h antes por grupo (clasificados)
+- [ ] Vista de "clasificados reales" pública tras finalizar fase de grupos

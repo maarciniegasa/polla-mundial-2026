@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "docx": "^9.7.1",
+    "markdown-it": "^14.2.0"
   }
 }
