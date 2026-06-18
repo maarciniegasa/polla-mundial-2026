@@ -150,6 +150,9 @@
                         <option value="Tercer Puesto">Tercer Puesto</option>
                         <option value="Final">Final</option>
                     </select>
+                    <button class="btn-save" onclick="downloadPredictionsPDF()" style="margin-left:1rem;">
+                        📄 Descargar PDF Predicciones
+                    </button>
                 </div>
 
                 <div id="admin-matches-container" class="matches-grid"></div>
@@ -209,6 +212,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
     <script src="firebase-config.js"></script>
     <script src="data.js"></script>
     <script src="app.js"></script>

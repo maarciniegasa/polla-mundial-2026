@@ -1067,4 +1067,88 @@ window.toggleApproval = async function(email) {
     }
 };
 
+window.downloadPredictionsPDF = async function() {
+    if (!currentUser || currentUser.role !== 'admin') {
+        alert('Solo administradores pueden descargar este reporte.');
+        return;
+    }
+
+    const phase = document.getElementById('admin-phase-select').value;
+    const groupId = currentGroupId;
+
+    showLoading('Generando PDF...');
+
+    try {
+        const matchesSnap = await db.collection('matches')
+            .where('phase', '==', phase)
+            .get();
+        const lockedMatches = matchesSnap.docs
+            .map(d => d.data())
+            .filter(m => isPredLocked(m))
+            .sort((a, b) => a.id - b.id);
+
+        if (lockedMatches.length === 0) {
+            hideLoading();
+            alert('No hay partidos bloqueados en esta fase para generar el reporte.');
+            return;
+        }
+
+        let usersQuery = db.collection('users').where('role', '==', 'player');
+        if (groupId) {
+            usersQuery = usersQuery.where('groups', 'array-contains', groupId);
+        }
+        const usersSnap = await usersQuery.get();
+        const users = usersSnap.docs.map(d => d.data()).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (users.length === 0) {
+            hideLoading();
+            alert('No hay jugadores en este grupo.');
+            return;
+        }
+
+        const userEmails = users.map(u => emailId(u.email));
+        const predsSnap = await db.collection('predictions')
+            .where(firebase.firestore.FieldPath.documentId(), 'in', userEmails)
+            .get();
+        const allPreds = {};
+        predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
+
+        const rows = [];
+        users.forEach(u => {
+            const uPreds = allPreds[emailId(u.email)] || {};
+            lockedMatches.forEach(m => {
+                const pred = uPreds[m.id];
+                rows.push([
+                    u.name,
+                    m.phase,
+                    m.group,
+                    m.home,
+                    m.away,
+                    pred?.h ?? '',
+                    pred?.a ?? ''
+                ]);
+            });
+        });
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        const groupName = groupId && allGroups[groupId] ? allGroups[groupId].name : 'Global';
+        doc.autoTable({
+            head: [['Jugador', 'Fase', 'Grupo', 'Local', 'Visit.', 'Pred.Loc', 'Pred.Vis']],
+            body: rows,
+            styles: { fontSize: 7, cellPadding: 2 },
+            columnStyles: { 0: { cellWidth: 30 }, 3: { cellWidth: 25 }, 4: { cellWidth: 25 } },
+            didDrawPage: (data) => {
+                doc.text(`Predicciones - ${phase} - Grupo: ${groupName} - ${new Date().toLocaleDateString('es-CO')}`, 14, 10);
+            }
+        });
+        doc.save(`predicciones-${phase.replace(/\s+/g, '-')}-${groupId || 'global'}-${Date.now()}.pdf`);
+
+    } catch(err) {
+        console.error('Error generando PDF:', err);
+        alert('Error al generar el PDF. Revisa la consola.');
+    }
+    hideLoading();
+};
+
 
