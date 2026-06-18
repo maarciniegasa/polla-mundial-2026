@@ -16,6 +16,7 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - ✅ Roles: `admin` y `player`
 - ✅ Aprobación manual de usuarios por admin
 - ✅ Persistencia de sesión automática
+- ✅ **Recuperación de contraseña** (`sendPasswordResetEmail`) con enlace "¿Olvidaste tu contraseña?" y email en español
 
 ### Gestión de Grupos (Solo Admin)
 - ✅ Crear/eliminar grupos
@@ -25,6 +26,8 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 ### Predicciones
 - ✅ Ingreso de marcador por partido (local/visitante)
 - ✅ Bloqueo automático **30 min antes** del inicio
+- ✅ **Auto-actualización UI cada 30s** (timer) para estados de bloqueo sin recargar página
+- ✅ **Validación servidor al guardar** (re-check `Date.now()` en `savePrediction`)
 - ✅ Estados visuales: `⏱ Cierra en X min`, `🔒 CERRADO`, `🔴 EN JUEGO`, `✅ FINALIZADO`
 - ✅ Filtro por fase/jornada
 
@@ -37,7 +40,7 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - ✅ Guardado por grupo individual en colección `groupPredictions`
 
 ### Panel Admin
-- ✅ Ingreso de resultados oficiales
+- ✅ Ingreso de resultados oficiales (sin timer, siempre editable)
 - ✅ Recalculo automático de puntos al guardar resultado
 - ✅ Vista de todos los partidos por fase
 - ✅ **Sección "Resultados Reales - Fase de Grupos"** para ingresar 1.º y 2.º real por grupo
@@ -94,6 +97,17 @@ return Date.now() >= cutoff.getTime();
 ```
 - Hora del partido en `data.js`: hora local Colombia (UTC-5)
 - Conversión a UTC: `hour + 5` en `parseMatchTime()`
+- **Regex fix**: `([^\s]+)` en vez de `(\w+)` para soportar días acentuados (Mié, Sáb)
+
+### Auto-actualización de Bloqueo (Timer UI)
+```javascript
+// En app.js: startLockTimer() / updateLockUI()
+setInterval(updateLockUI, 30000); // cada 30s
+```
+- Actualiza: status labels, inputs disabled/enabled, botones, clases CSS
+- Solo en vistas usuario (`#matches-container`, `#group-predictions-container`)
+- **No afecta panel admin** (`#admin-matches-container`)
+- Validación extra al guardar: `savePrediction` hace fetch + `isPredLocked()` en servidor
 
 ### Bloqueo de Predicciones (Clasificados)
 ```javascript
@@ -153,3 +167,11 @@ Configurar en dashboard de Vercel:
 - [ ] PWA (offline support)
 - [ ] Notificaciones automáticas 2h antes por grupo (clasificados)
 - [ ] Vista de "clasificados reales" pública tras finalizar fase de grupos
+
+## Historial de Cambios Recientes (Jun 2026)
+| Fecha | Commit | Descripción |
+|-------|--------|-------------|
+| 17-jun | `87d9b64` | Fix: timer solo en vista usuario, no panel admin |
+| 17-jun | `6acfcf3` | Feat: lock timer 30s + validación servidor al guardar |
+| 17-jun | `520a2d3` | Feat: recuperación contraseña (Firebase sendPasswordResetEmail) |
+| 17-jun | `e292d80` | Fix: parseMatchTime regex para días acentuados (Mié, Sáb) |
