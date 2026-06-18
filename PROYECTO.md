@@ -8,6 +8,7 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - **Backend**: Firebase Firestore (base de datos) + Firebase Auth (autenticación)
 - **Hosting**: Vercel (deploy automático desde GitHub)
 - **Datos**: 104 partidos del Mundial 2026 (fase de grupos + eliminatorias)
+- **Librerías externas**: jsPDF + autoTable (generación PDF reportes)
 
 ## Funcionalidades Implementadas
 
@@ -45,6 +46,11 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - ✅ Vista de todos los partidos por fase
 - ✅ **Sección "Resultados Reales - Fase de Grupos"** para ingresar 1.º y 2.º real por grupo
 - ✅ Tabla de predicciones de todos los jugadores con puntos calculados por grupo
+- ✅ **Descarga PDF de predicciones** por fase y grupo (solo partidos con deadline cumplido)
+  - Filtrado por grupo seleccionado en header (o global)
+  - Columnas: Jugador, Fase, Grupo, Local, Visit., Pred.Loc, Pred.Vis
+  - Incluye predicciones vacías para control
+  - Incluye admins y players del grupo
 
 ### Sistema de Puntos
 - ✅ **3 puntos**: resultado exacto marcador (ej. 1-1 vs 1-1)
@@ -162,7 +168,7 @@ Configurar en dashboard de Vercel:
 ## Pendientes / Mejoras Futuras
 - [ ] Notificaciones push/email antes de cierre
 - [ ] Historial de predicciones por usuario
-- [ ] Exportar leaderboard a CSV/PDF
+- [ ] Exportar leaderboard a CSV/PDF (parcial: PDF predicciones admin implementado)
 - [ ] Tests automatizados
 - [ ] PWA (offline support)
 - [ ] Notificaciones automáticas 2h antes por grupo (clasificados)
@@ -171,6 +177,8 @@ Configurar en dashboard de Vercel:
 ## Historial de Cambios Recientes (Jun 2026)
 | Fecha | Commit | Descripción |
 |-------|--------|-------------|
+| 18-jun | `db0bbdd` | Feat: PDF download predicciones admin (incluye admins, filtrado grupo, solo partidos bloqueados) |
+| 18-jun | `43947b8` | Fix: evitar límite Firestore 'in' query (fetch all predictions client-side) |
 | 17-jun | `87d9b64` | Fix: timer solo en vista usuario, no panel admin |
 | 17-jun | `6acfcf3` | Feat: lock timer 30s + validación servidor al guardar |
 | 17-jun | `520a2d3` | Feat: recuperación contraseña (Firebase sendPasswordResetEmail) |
