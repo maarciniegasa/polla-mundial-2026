@@ -28,6 +28,19 @@
                 <button type="submit" id="auth-submit-btn" class="btn-save">Ingresar</button>
                 <p id="auth-error" class="error-msg"></p>
             </form>
+
+            <!-- Reset Password View -->
+            <div id="reset-view" class="auth-form" style="display: none;">
+                <input type="email" id="reset-email" placeholder="Correo Electrónico" required autocomplete="email">
+                <button type="button" id="reset-submit-btn" class="btn-save">Enviar email de recuperación</button>
+                <p id="reset-error" class="error-msg"></p>
+                <p id="reset-success" class="success-msg" style="display: none;"></p>
+                <button type="button" id="reset-back-btn" class="btn-secondary" style="margin-top: 1rem; display: none;">Volver a login</button>
+            </div>
+
+            <p id="forgot-password-link" style="text-align: center; margin-top: 0.8rem;">
+                <a href="#" onclick="toggleAuthMode('reset'); return false;" style="color: var(--accent-blue); font-size: 0.85rem;">¿Olvidaste tu contraseña?</a>
+            </p>
         </div>
     </div>
 

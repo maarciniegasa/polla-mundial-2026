@@ -121,6 +121,8 @@ function calculateGroupPredictionPoints(predFirst, predSecond, realFirst, realSe
 }
 
 // --- AUTH LOGIC (Firebase Authentication) ---
+auth.languageCode = 'es';
+
 let currentUser = null;
 let authMode = 'login';
 let authReady = false;
@@ -130,10 +132,31 @@ let allGroups = {};
 window.toggleAuthMode = function(mode) {
     authMode = mode;
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById('auth-name').style.display = mode === 'register' ? 'block' : 'none';
-    document.getElementById('auth-submit-btn').textContent = mode === 'register' ? 'Registrarse' : 'Ingresar';
-    document.getElementById('auth-error').textContent = '';
+    if (event && event.target) event.target.classList.add('active');
+
+    const authForm = document.getElementById('auth-form');
+    const resetView = document.getElementById('reset-view');
+    const forgotLink = document.getElementById('forgot-password-link');
+
+    if (mode === 'reset') {
+        authForm.style.display = 'none';
+        resetView.style.display = 'block';
+        forgotLink.style.display = 'none';
+        document.getElementById('reset-error').textContent = '';
+        document.getElementById('reset-success').style.display = 'none';
+        document.getElementById('reset-success').textContent = '';
+        document.getElementById('reset-email').value = '';
+        document.getElementById('reset-submit-btn').style.display = 'inline-block';
+        document.getElementById('reset-back-btn').style.display = 'none';
+    } else {
+        authForm.style.display = 'block';
+        resetView.style.display = 'none';
+        forgotLink.style.display = 'block';
+        document.getElementById('auth-name').style.display = mode === 'register' ? 'block' : 'none';
+        document.getElementById('auth-password').style.display = 'block';
+        document.getElementById('auth-submit-btn').textContent = mode === 'register' ? 'Registrarse' : 'Ingresar';
+        document.getElementById('auth-error').textContent = '';
+    }
 };
 
 document.getElementById('auth-form').addEventListener('submit', async (e) => {
@@ -204,6 +227,49 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
         console.error(err);
     }
     hideLoading();
+});
+
+document.getElementById('reset-submit-btn').addEventListener('click', async () => {
+    const email = document.getElementById('reset-email').value.trim().toLowerCase();
+    const errorEl = document.getElementById('reset-error');
+    const successEl = document.getElementById('reset-success');
+    const submitBtn = document.getElementById('reset-submit-btn');
+    const backBtn = document.getElementById('reset-back-btn');
+
+    errorEl.textContent = '';
+    successEl.style.display = 'none';
+    successEl.textContent = '';
+
+    if (!email) {
+        errorEl.textContent = 'Ingresa tu correo electrónico.';
+        return;
+    }
+
+    showLoading('Enviando email de recuperación...');
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        successEl.textContent = `✅ Email enviado a ${email}. Revisa tu bandeja (incluye spam).`;
+        successEl.style.display = 'block';
+        submitBtn.style.display = 'none';
+        backBtn.style.display = 'inline-block';
+    } catch (err) {
+        if (err.code === 'auth/user-not-found') {
+            errorEl.textContent = 'Si el correo existe en nuestro sistema, recibirás instrucciones.';
+        } else if (err.code === 'auth/too-many-requests') {
+            errorEl.textContent = 'Demasiados intentos. Espera un momento e inténtalo de nuevo.';
+        } else if (err.code === 'auth/invalid-email') {
+            errorEl.textContent = 'Formato de correo inválido.';
+        } else {
+            errorEl.textContent = 'Error al enviar email. Intenta de nuevo.';
+        }
+        console.error(err);
+    }
+    hideLoading();
+});
+
+document.getElementById('reset-back-btn').addEventListener('click', () => {
+    toggleAuthMode('login');
 });
 
 async function loginUser(user) {

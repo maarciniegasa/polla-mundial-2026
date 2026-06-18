@@ -343,3 +343,43 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
 .points-badge.none { background: rgba(239,68,68,0.2); color: var(--accent-red); }
 
 .admin-group-select { font-size: 0.85rem; padding: 0.5rem; }
+
+/* === RESET PASSWORD === */
+.btn-secondary {
+    background: transparent;
+    color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.btn-secondary:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+.success-msg {
+    color: var(--accent-green);
+    font-size: 0.9rem;
+    text-align: center;
+    min-height: 1.2em;
+    line-height: 1.4;
+}
+#reset-view .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+#reset-view input {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+}
+#reset-view input:focus {
+    outline: none;
+    border-color: var(--accent-green);
+}
