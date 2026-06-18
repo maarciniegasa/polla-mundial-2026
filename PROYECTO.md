@@ -177,8 +177,9 @@ Configurar en dashboard de Vercel:
 ## Historial de Cambios Recientes (Jun 2026)
 | Fecha | Commit | Descripción |
 |-------|--------|-------------|
-| 18-jun | `db0bbdd` | Feat: PDF download predicciones admin (incluye admins, filtrado grupo, solo partidos bloqueados) |
+| 18-jun | `0fe0695` | Feat: PDF download predicciones admin (filtrado grupo, solo partidos bloqueados) |
 | 18-jun | `43947b8` | Fix: evitar límite Firestore 'in' query (fetch all predictions client-side) |
+| 18-jun | `db0bbdd` | Feat: incluir predicciones de admins en PDF download |
 | 17-jun | `87d9b64` | Fix: timer solo en vista usuario, no panel admin |
 | 17-jun | `6acfcf3` | Feat: lock timer 30s + validación servidor al guardar |
 | 17-jun | `520a2d3` | Feat: recuperación contraseña (Firebase sendPasswordResetEmail) |
