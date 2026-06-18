@@ -1106,10 +1106,8 @@ window.downloadPredictionsPDF = async function() {
             return;
         }
 
-        const userEmails = users.map(u => emailId(u.email));
-        const predsSnap = await db.collection('predictions')
-            .where(firebase.firestore.FieldPath.documentId(), 'in', userEmails)
-            .get();
+        // Fetch ALL predictions (avoid Firestore 'in' query limit of 10)
+        const predsSnap = await db.collection('predictions').get();
         const allPreds = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
 
