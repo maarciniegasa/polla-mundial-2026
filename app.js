@@ -154,7 +154,7 @@ function updateLockUI() {
 }
 
 function updateMatchesLockUI() {
-    document.querySelectorAll('.match-card:not(.match-card-locked), .match-card.match-card-locked').forEach(card => {
+    document.querySelectorAll('#matches-container .match-card').forEach(card => {
         const matchId = parseInt(card.querySelector('.score-input')?.dataset?.match);
         if (!matchId) return;
 
