@@ -1093,12 +1093,15 @@ window.downloadPredictionsPDF = async function() {
             return;
         }
 
-        let usersQuery = db.collection('users').where('role', '==', 'player');
+        let usersQuery = db.collection('users');
         if (groupId) {
             usersQuery = usersQuery.where('groups', 'array-contains', groupId);
         }
         const usersSnap = await usersQuery.get();
-        const users = usersSnap.docs.map(d => d.data()).sort((a, b) => a.name.localeCompare(b.name));
+        const users = usersSnap.docs
+            .map(d => d.data())
+            .filter(u => u.role === 'player' || u.role === 'admin')
+            .sort((a, b) => a.name.localeCompare(b.name));
 
         if (users.length === 0) {
             hideLoading();
