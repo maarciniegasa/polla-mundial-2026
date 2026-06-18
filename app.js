@@ -120,6 +120,132 @@ function calculateGroupPredictionPoints(predFirst, predSecond, realFirst, realSe
     return { pts: 0, exact: 0 };
 }
 
+// --- LOCK TIMER (Auto-update UI for time-based locks) ---
+let lockUpdateInterval = null;
+
+function startLockTimer() {
+    stopLockTimer();
+    lockUpdateInterval = setInterval(updateLockUI, 30000);
+    updateLockUI();
+}
+
+function stopLockTimer() {
+    if (lockUpdateInterval) {
+        clearInterval(lockUpdateInterval);
+        lockUpdateInterval = null;
+    }
+}
+
+function updateLockUI() {
+    if (!currentUser) return;
+
+    const activeView = document.querySelector('.view-section.active');
+    if (!activeView) return;
+
+    const isPredictionsView = activeView.id === 'predictions';
+    const isGroupPredictionsView = activeView.id === 'group-predictions';
+
+    if (isPredictionsView) {
+        updateMatchesLockUI();
+    }
+    if (isGroupPredictionsView) {
+        updateGroupPredictionsLockUI();
+    }
+}
+
+function updateMatchesLockUI() {
+    document.querySelectorAll('.match-card:not(.match-card-locked), .match-card.match-card-locked').forEach(card => {
+        const matchId = parseInt(card.querySelector('.score-input')?.dataset?.match);
+        if (!matchId) return;
+
+        const statusEl = card.querySelector('.match-status');
+        const homeInput = card.querySelector('.score-input[data-team="home"]');
+        const awayInput = card.querySelector('.score-input[data-team="away"]');
+        const saveBtn = card.querySelector('.btn-save');
+
+        if (!statusEl) return;
+
+        const matchSnap = matchesCache?.find(m => m.id === matchId);
+        if (!matchSnap) return;
+
+        const locked = isPredLocked(matchSnap);
+        const label = getLockLabel(matchSnap);
+
+        const wasLocked = card.classList.contains('match-card-locked');
+        if (locked !== wasLocked) {
+            card.classList.toggle('match-card-locked', locked);
+        }
+
+        statusEl.textContent = label;
+        statusEl.className = 'match-status ' + (matchSnap.status === 'finished' ? 'finished' : (locked ? 'locked' : matchSnap.status));
+
+        if (homeInput) homeInput.disabled = locked;
+        if (awayInput) awayInput.disabled = locked;
+
+        if (saveBtn && !saveBtn.onclick?.toString().includes('simulateResult')) {
+            if (locked) {
+                const hasPred = homeInput?.value !== '' && awayInput?.value !== '';
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+                saveBtn.style.cursor = 'not-allowed';
+                saveBtn.textContent = matchSnap.status === 'finished' ? '✅ Partido finalizado' : (hasPred ? '🔒 Predicción guardada' : '🔒 Predicciones cerradas');
+            } else {
+                saveBtn.disabled = false;
+                saveBtn.style.opacity = '1';
+                saveBtn.style.cursor = 'pointer';
+                saveBtn.textContent = 'Guardar Predicción';
+            }
+        }
+    });
+}
+
+function updateGroupPredictionsLockUI() {
+    document.querySelectorAll('.group-pred-card').forEach(card => {
+        const groupId = card.querySelector('.group-pred-select')?.dataset?.group;
+        if (!groupId) return;
+
+        const lockInfo = getGroupLockInfo(groupId);
+        const statusEl = card.querySelector('.group-pred-status');
+        const firstSelect = card.querySelector('.group-pred-select[data-position="first"]');
+        const secondSelect = card.querySelector('.group-pred-select[data-position="second"]');
+        const saveBtn = card.querySelector('.btn-save-group');
+
+        if (!statusEl) return;
+
+        let statusClass = 'open';
+        if (lockInfo.locked) statusClass = 'locked';
+        else if (lockInfo.warning) statusClass = 'warning';
+        if (lockInfo.kickoff && Date.now() >= lockInfo.kickoff.getTime()) statusClass = 'finished';
+
+        const wasLocked = card.classList.contains('locked');
+        if (lockInfo.locked !== wasLocked) {
+            card.classList.toggle('locked', lockInfo.locked);
+        }
+
+        statusEl.textContent = lockInfo.label;
+        statusEl.className = 'group-pred-status ' + statusClass;
+
+        if (firstSelect) firstSelect.disabled = lockInfo.locked;
+        if (secondSelect) secondSelect.disabled = lockInfo.locked;
+
+        if (saveBtn) {
+            if (lockInfo.locked) {
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+                saveBtn.style.cursor = 'not-allowed';
+                saveBtn.textContent = '🔒 Predicciones cerradas';
+            } else {
+                saveBtn.disabled = false;
+                saveBtn.style.opacity = '1';
+                saveBtn.style.cursor = 'pointer';
+                saveBtn.textContent = 'Guardar Predicción';
+            }
+        }
+    });
+}
+
+let matchesCache = [];
+
 // --- AUTH LOGIC (Firebase Authentication) ---
 auth.languageCode = 'es';
 
@@ -495,15 +621,30 @@ const views   = document.querySelectorAll('.view-section');
 
 navBtns.forEach(btn => {
     btn.addEventListener('click', async () => {
+        const prevTarget = document.querySelector('.view-section.active')?.id;
+        const nextTarget = btn.dataset.target;
+
+        const wasPredictionView = prevTarget === 'predictions' || prevTarget === 'group-predictions';
+        const willBePredictionView = nextTarget === 'predictions' || nextTarget === 'group-predictions';
+
+        if (wasPredictionView && !willBePredictionView) {
+            stopLockTimer();
+        }
+
         navBtns.forEach(b => b.classList.remove('active'));
         views.forEach(v => v.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById(btn.dataset.target).classList.add('active');
+        document.getElementById(nextTarget).classList.add('active');
+
         if (btn.dataset.target === 'users' && currentUser?.role === 'admin') await renderUsersView();
         if (btn.dataset.target === 'groups' && currentUser?.role === 'admin') await renderGroupsView();
         if (btn.dataset.target === 'leaderboard') await updateLeaderboard();
         if (btn.dataset.target === 'group-predictions') await renderGroupPredictionsView();
         if (btn.dataset.target === 'admin' && currentUser?.role === 'admin') await renderAdminGroupPredictionsView();
+
+        if (!wasPredictionView && willBePredictionView) {
+            startLockTimer();
+        }
     });
 });
 
@@ -525,14 +666,14 @@ window.renderMatchesView = async function() {
             db.collection('predictions').doc(emailId(currentUser.email)).get()
         ]);
 
-        const matches  = matchSnap.docs.map(d => d.data()).sort((a, b) => a.id - b.id);
+        matchesCache = matchSnap.docs.map(d => d.data()).sort((a, b) => a.id - b.id);
         const myPreds  = predSnap.exists ? predSnap.data() : {};
 
         mContainer.innerHTML = '';
-        if (matches.length === 0) {
+        if (matchesCache.length === 0) {
             mContainer.innerHTML = '<p style="color:#888;text-align:center;padding:2rem;">No hay partidos en esta fase.</p>';
         }
-        matches.forEach(match => mContainer.appendChild(createMatchCard(match, myPreds[match.id] || {}, false)));
+        matchesCache.forEach(match => mContainer.appendChild(createMatchCard(match, myPreds[match.id] || {}, false)));
 
         // Admin panel
         if (currentUser.role === 'admin' && aContainer && adminPhase) {
@@ -541,6 +682,8 @@ window.renderMatchesView = async function() {
             aContainer.innerHTML = '';
             adminMatches.forEach(match => aContainer.appendChild(createMatchCard(match, {}, true)));
         }
+
+        startLockTimer();
     } catch(err) {
         mContainer.innerHTML = '<p style="color:#ef4444;text-align:center;padding:2rem;">Error al cargar. Revisa tu conexión.</p>';
         console.error(err);
@@ -618,6 +761,8 @@ window.renderGroupPredictionsView = async function() {
             const myPred = myPreds[groupId] || {};
             container.appendChild(createGroupPredictionCard(groupId, teams, myPred, lockInfo));
         });
+
+        startLockTimer();
     } catch(err) {
         container.innerHTML = '<p style="color:#ef4444;text-align:center;padding:2rem;">Error al cargar.</p>';
         console.error(err);
@@ -707,12 +852,17 @@ window.savePrediction = async (matchId) => {
     if (isNaN(h) || isNaN(a)) { alert('Ingresa valores numéricos válidos.'); return; }
 
     try {
+        const matchSnap = await db.collection('matches').doc(String(matchId)).get();
+        if (!matchSnap.exists) { alert('Partido no encontrado.'); return; }
+        if (isPredLocked(matchSnap.data())) { alert('⏰ El plazo de predicción para este partido ya cerró (30 min antes del inicio).'); return; }
+
         await db.collection('predictions').doc(emailId(currentUser.email)).set(
             { [matchId]: { h, a } },
             { merge: true }
         );
         alert('✅ Predicción guardada exitosamente.');
         await updateLeaderboard();
+        await renderMatchesView();
     } catch(err) {
         alert('Error al guardar. Revisa tu conexión.');
         console.error(err);
