@@ -149,10 +149,8 @@ async function getMatchPredictionsForDate(dateKey, members) {
     if (!members.length) return {};
     
     try {
-        const memberEmails = members.map(m => emailId(m.email));
-        const predsSnap = await db.collection('predictions')
-            .where(firebase.firestore.FieldPath.documentId(), 'in', memberEmails)
-            .get();
+        // Fetch ALL predictions and filter client-side to avoid Firestore 'in' query limit (max 10)
+        const predsSnap = await db.collection('predictions').get();
         
         const allPreds = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
@@ -194,10 +192,8 @@ async function getGroupPredictionsForClosedGroups(members) {
     if (!members.length) return {};
     
     try {
-        const memberEmails = members.map(m => emailId(m.email));
-        const predsSnap = await db.collection('groupPredictions')
-            .where(firebase.firestore.FieldPath.documentId(), 'in', memberEmails)
-            .get();
+        // Fetch ALL group predictions and filter client-side to avoid Firestore 'in' query limit (max 10)
+        const predsSnap = await db.collection('groupPredictions').get();
         
         const allPreds = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
