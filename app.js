@@ -160,7 +160,7 @@ async function getMatchPredictionsForDate(dateKey, members) {
         const dateMatches = matchesCache.filter(m => {
             const kickoff = parseMatchTime(m.time);
             if (!kickoff) return false;
-            const matchDateKey = kickoff.toISOString().split('T')[0];
+            const matchDateKey = getColombiaDateString(kickoff);
             return matchDateKey === dateKey && isPredLocked(m);
         });
         
@@ -416,6 +416,12 @@ window.closePredictionsModal = function() {
 function formatDateForDisplay(dateKey) {
     const [year, month, day] = dateKey.split('-');
     return `${day}/${month}/${year}`;
+}
+
+// Helper: get local Colombia date (UTC-5) from UTC Date
+function getColombiaDateString(date) {
+    const colombiaTime = new Date(date.getTime() - 5 * 60 * 60 * 1000);
+    return colombiaTime.toISOString().split('T')[0];
 }
 
 // --- LOCK TIMER (Auto-update UI for time-based locks) ---
@@ -1008,7 +1014,7 @@ function createMatchCard(match, myPred, isAdmin) {
     const inputClass = isAdmin ? 'admin-input' : 'pred-input';
 
     const kickoff = parseMatchTime(match.time);
-    const dateKey = kickoff ? kickoff.toISOString().split('T')[0] : null;
+    const dateKey = kickoff ? getColombiaDateString(kickoff) : null;
 
     let actionButton;
     let viewPredictionsButton = '';
