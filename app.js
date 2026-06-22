@@ -157,12 +157,19 @@ async function getMatchPredictionsForDate(dateKey, members) {
         const allPreds = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
         
-        const dateMatches = matchesCache.filter(m => {
+        // Debug: log all matches in cache for this date
+        console.log('[getMatchPredictionsForDate] dateKey:', dateKey);
+        console.log('[getMatchPredictionsForDate] matchesCache length:', matchesCache.length);
+        const allDateMatches = matchesCache.filter(m => {
             const kickoff = parseMatchTime(m.time);
             if (!kickoff) return false;
             const matchDateKey = getColombiaDateString(kickoff);
-            return matchDateKey === dateKey && isPredLocked(m);
+            return matchDateKey === dateKey;
         });
+        console.log('[getMatchPredictionsForDate] matches on this date (any lock status):', allDateMatches.map(m => ({ id: m.id, time: m.time, locked: isPredLocked(m), status: m.status })));
+        
+        const dateMatches = allDateMatches.filter(m => isPredLocked(m));
+        console.log('[getMatchPredictionsForDate] locked matches on this date:', dateMatches.map(m => m.id));
         
         const result = {};
         dateMatches.forEach(match => {
