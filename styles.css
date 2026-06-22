@@ -383,3 +383,118 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
     outline: none;
     border-color: var(--accent-green);
 }
+
+/* === PREDICTIONS MODAL === */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: auto;
+    width: 700px;
+    box-shadow: var(--glass-shadow);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    line-height: 1;
+    padding: 0;
+}
+.modal-close:hover {
+    color: var(--text-main);
+}
+.modal-body {
+    padding: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.pred-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+.pred-table th,
+.pred-table td {
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.pred-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 1;
+}
+.pred-table tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+.pred-table .you {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+.pred-table .no-pred {
+    color: var(--text-muted);
+    font-style: italic;
+}
+.modal-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 3rem;
+    font-size: 1rem;
+}
+.btn-view-predictions {
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 0.5rem;
+    width: 100%;
+}
+.btn-view-predictions:hover {
+    filter: brightness(1.1);
+}
+.match-actions,
+.group-pred-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.match-actions .btn-save,
+.group-pred-actions .btn-save-group {
+    margin-top: 0;
+}

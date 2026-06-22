@@ -120,6 +120,304 @@ function calculateGroupPredictionPoints(predFirst, predSecond, realFirst, realSe
     return { pts: 0, exact: 0 };
 }
 
+// --- HELPER: Get group members (approved players in user's groups) ---
+async function getGroupMembers() {
+    if (!currentUser || !currentUser.groups || currentUser.groups.length === 0) return [];
+    
+    try {
+        const usersSnap = await db.collection('users')
+            .where('groups', 'array-contains-any', currentUser.groups)
+            .where('isApproved', '==', true)
+            .get();
+        
+        const members = [];
+        usersSnap.docs.forEach(d => {
+            const u = d.data();
+            if (u.role === 'player' || u.role === 'admin') {
+                members.push({ email: u.email, name: u.name, groups: u.groups });
+            }
+        });
+        return members;
+    } catch (err) {
+        console.error('Error fetching group members:', err);
+        return [];
+    }
+}
+
+// --- HELPER: Get match predictions for a specific date ---
+async function getMatchPredictionsForDate(dateKey, members) {
+    if (!members.length) return {};
+    
+    try {
+        const memberEmails = members.map(m => emailId(m.email));
+        const predsSnap = await db.collection('predictions')
+            .where(firebase.firestore.FieldPath.documentId(), 'in', memberEmails)
+            .get();
+        
+        const allPreds = {};
+        predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
+        
+        const dateMatches = matchesCache.filter(m => {
+            const kickoff = parseMatchTime(m.time);
+            if (!kickoff) return false;
+            const matchDateKey = kickoff.toISOString().split('T')[0];
+            return matchDateKey === dateKey && isPredLocked(m);
+        });
+        
+        const result = {};
+        dateMatches.forEach(match => {
+            result[match.id] = {};
+            members.forEach(m => {
+                const pred = allPreds[emailId(m.email)]?.[match.id];
+                if (pred) {
+                    result[match.id][m.email] = { ...pred, playerName: m.name };
+                }
+            });
+        });
+        
+        return { matches: dateMatches, predictions: result };
+    } catch (err) {
+        console.error('Error fetching match predictions for date:', err);
+        return { matches: [], predictions: {} };
+    }
+}
+
+// --- HELPER: Get group predictions for all closed groups ---
+async function getGroupPredictionsForClosedGroups(members) {
+    if (!members.length) return {};
+    
+    try {
+        const memberEmails = members.map(m => emailId(m.email));
+        const predsSnap = await db.collection('groupPredictions')
+            .where(firebase.firestore.FieldPath.documentId(), 'in', memberEmails)
+            .get();
+        
+        const allPreds = {};
+        predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
+        
+        const closedGroups = [];
+        Object.keys(GROUP_FIRST_MATCH).forEach(groupId => {
+            const lockInfo = getGroupLockInfo(groupId);
+            if (lockInfo.locked) closedGroups.push(groupId);
+        });
+        
+        const result = {};
+        closedGroups.forEach(groupId => {
+            result[groupId] = {};
+            members.forEach(m => {
+                const pred = allPreds[emailId(m.email)]?.[groupId];
+                if (pred) {
+                    result[groupId][m.email] = { ...pred, playerName: m.name };
+                }
+            });
+        });
+        
+        return { groups: closedGroups, predictions: result };
+    } catch (err) {
+        console.error('Error fetching group predictions:', err);
+        return { groups: [], predictions: {} };
+    }
+}
+
+// --- MODAL HANDLERS ---
+window.openMatchPredictionsModal = async function(dateKey) {
+    const modal = document.getElementById('predictions-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = `Predicciones del ${formatDateForDisplay(dateKey)}`;
+    modalBody.innerHTML = '<p style="text-align:center;color:var(--text-muted);">Cargando...</p>';
+    modal.style.display = 'flex';
+    
+    try {
+        const members = await getGroupMembers();
+        if (members.length === 0) {
+            modalBody.innerHTML = '<p class="modal-empty">No hay otros jugadores en tus grupos.</p>';
+            return;
+        }
+        
+        const { matches, predictions } = await getMatchPredictionsForDate(dateKey, members);
+        
+        if (matches.length === 0) {
+            modalBody.innerHTML = '<p class="modal-empty">No hay partidos bloqueados para esta fecha.</p>';
+            return;
+        }
+        
+        const otherMembers = members.filter(m => m.email !== currentUser.email);
+        if (otherMembers.length === 0) {
+            modalBody.innerHTML = '<p class="modal-empty">Eres el único jugador en tus grupos.</p>';
+            return;
+        }
+        
+        let html = '';
+        matches.forEach(match => {
+            const matchPreds = predictions[match.id] || {};
+            const hasAnyPred = Object.keys(matchPreds).length > 0;
+            
+            if (!hasAnyPred) return;
+            
+            html += `
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="color:var(--accent-gold);margin-bottom:0.5rem;font-size:0.9rem;">
+                        ${match.home} ${match.homeFlag} vs ${match.awayFlag} ${match.away} (${match.group})
+                    </h4>
+                    <table class="pred-table">
+                        <thead>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>Predicción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            otherMembers.forEach(m => {
+                const pred = matchPreds[m.email];
+                const isCurrentUser = m.email === currentUser.email;
+                const rowClass = isCurrentUser ? 'you' : '';
+                const predText = pred ? `${pred.h} - ${pred.a}` : '<span class="no-pred">Sin predicción</span>';
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${m.name}${isCurrentUser ? ' <span style="color:var(--accent-green);font-size:0.75rem;">(Tú)</span>' : ''}</td>
+                        <td>${predText}</td>
+                    </tr>
+                `;
+            });
+            
+            // Also show current user's prediction if they have one
+            const myPred = matchPreds[currentUser.email];
+            if (myPred) {
+                html += `
+                    <tr class="you">
+                        <td>${currentUser.name} <span style="color:var(--accent-green);font-size:0.75rem;">(Tú)</span></td>
+                        <td>${myPred.h} - ${myPred.a}</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+        
+        if (!html) {
+            modalBody.innerHTML = '<p class="modal-empty">No hay predicciones de otros jugadores para los partidos de este día.</p>';
+        } else {
+            modalBody.innerHTML = html;
+        }
+    } catch (err) {
+        console.error('Error opening match predictions modal:', err);
+        modalBody.innerHTML = '<p class="modal-empty" style="color:var(--accent-red);">Error al cargar predicciones.</p>';
+    }
+};
+
+window.openGroupPredictionsModal = async function() {
+    const modal = document.getElementById('predictions-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    
+    modalTitle.textContent = 'Predicciones de Clasificados (Grupos Cerrados)';
+    modalBody.innerHTML = '<p style="text-align:center;color:var(--text-muted);">Cargando...</p>';
+    modal.style.display = 'flex';
+    
+    try {
+        const members = await getGroupMembers();
+        if (members.length === 0) {
+            modalBody.innerHTML = '<p class="modal-empty">No hay otros jugadores en tus grupos.</p>';
+            return;
+        }
+        
+        const { groups, predictions } = await getGroupPredictionsForClosedGroups(members);
+        
+        if (groups.length === 0) {
+            modalBody.innerHTML = '<p class="modal-empty">No hay grupos con deadline cumplido aún.</p>';
+            return;
+        }
+        
+        const otherMembers = members.filter(m => m.email !== currentUser.email);
+        if (otherMembers.length === 0) {
+            modalBody.innerHTML = '<p class="modal-empty">Eres el único jugador en tus grupos.</p>';
+            return;
+        }
+        
+        let html = '';
+        groups.forEach(groupId => {
+            const groupPreds = predictions[groupId] || {};
+            const hasAnyPred = Object.keys(groupPreds).length > 0;
+            
+            if (!hasAnyPred) return;
+            
+            html += `
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="color:var(--accent-gold);margin-bottom:0.5rem;font-size:0.9rem;">Grupo ${groupId}</h4>
+                    <table class="pred-table">
+                        <thead>
+                            <tr>
+                                <th>Jugador</th>
+                                <th>1.º Clasificado</th>
+                                <th>2.º Clasificado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            otherMembers.forEach(m => {
+                const pred = groupPreds[m.email];
+                const isCurrentUser = m.email === currentUser.email;
+                const rowClass = isCurrentUser ? 'you' : '';
+                const firstText = pred?.first ? pred.first : '<span class="no-pred">—</span>';
+                const secondText = pred?.second ? pred.second : '<span class="no-pred">—</span>';
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${m.name}${isCurrentUser ? ' <span style="color:var(--accent-green);font-size:0.75rem;">(Tú)</span>' : ''}</td>
+                        <td>${firstText}</td>
+                        <td>${secondText}</td>
+                    </tr>
+                `;
+            });
+            
+            // Also show current user's prediction if they have one
+            const myPred = groupPreds[currentUser.email];
+            if (myPred) {
+                html += `
+                    <tr class="you">
+                        <td>${currentUser.name} <span style="color:var(--accent-green);font-size:0.75rem;">(Tú)</span></td>
+                        <td>${myPred.first}</td>
+                        <td>${myPred.second}</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+        
+        if (!html) {
+            modalBody.innerHTML = '<p class="modal-empty">No hay predicciones de otros jugadores para los grupos cerrados.</p>';
+        } else {
+            modalBody.innerHTML = html;
+        }
+    } catch (err) {
+        console.error('Error opening group predictions modal:', err);
+        modalBody.innerHTML = '<p class="modal-empty" style="color:var(--accent-red);">Error al cargar predicciones.</p>';
+    }
+};
+
+window.closePredictionsModal = function() {
+    document.getElementById('predictions-modal').style.display = 'none';
+};
+
+// Helper: format date for display (DD/MM/YYYY)
+function formatDateForDisplay(dateKey) {
+    const [year, month, day] = dateKey.split('-');
+    return `${day}/${month}/${year}`;
+}
+
 // --- LOCK TIMER (Auto-update UI for time-based locks) ---
 let lockUpdateInterval = null;
 
@@ -709,13 +1007,20 @@ function createMatchCard(match, myPred, isAdmin) {
     const disabled   = locked ? 'disabled' : '';
     const inputClass = isAdmin ? 'admin-input' : 'pred-input';
 
+    const kickoff = parseMatchTime(match.time);
+    const dateKey = kickoff ? kickoff.toISOString().split('T')[0] : null;
+
     let actionButton;
+    let viewPredictionsButton = '';
     if (isAdmin) {
         actionButton = `<button class="btn-save" style="background:var(--accent-gold);color:black;" onclick="simulateResult(${match.id})">Guardar Resultado Oficial</button>`;
     } else if (locked) {
         const hasPred = myPred.h !== undefined;
         const icon = match.status === 'finished' ? '✅ Partido finalizado' : (hasPred ? '🔒 Predicción guardada' : '🔒 Predicciones cerradas');
         actionButton = `<button class="btn-save" disabled style="opacity:0.5;cursor:not-allowed;">${icon}</button>`;
+        if (dateKey) {
+            viewPredictionsButton = `<button class="btn-view-predictions" onclick="openMatchPredictionsModal('${dateKey}')">👁 Ver predicciones del día</button>`;
+        }
     } else {
         actionButton = `<button class="btn-save" onclick="savePrediction(${match.id})">Guardar Predicción</button>`;
     }
@@ -735,7 +1040,10 @@ function createMatchCard(match, myPred, isAdmin) {
             </div>
             <div class="team"><span class="flag">${match.awayFlag}</span><span class="team-name">${match.away}</span></div>
         </div>
-        ${actionButton}
+        <div class="match-actions">
+            ${actionButton}
+            ${viewPredictionsButton}
+        </div>
     `;
     return card;
 }
@@ -786,8 +1094,10 @@ function createGroupPredictionCard(groupId, teams, myPred, lockInfo) {
     const secondOptions = teams.map(t => `<option value="${t}"${myPred.second === t ? ' selected' : ''}>${t}</option>`).join('');
 
     let actionButton;
+    let viewPredictionsButton = '';
     if (lockInfo.locked) {
         actionButton = `<button class="btn-save-group" disabled style="opacity:0.5;cursor:not-allowed;">${savedLabel || '🔒 Predicciones cerradas'}</button>`;
+        viewPredictionsButton = `<button class="btn-view-predictions" onclick="openGroupPredictionsModal()">👁 Ver predicciones de grupos cerrados</button>`;
     } else {
         actionButton = `<button class="btn-save-group" onclick="saveGroupPrediction('${groupId}')">Guardar Predicción</button>`;
     }
@@ -813,7 +1123,10 @@ function createGroupPredictionCard(groupId, teams, myPred, lockInfo) {
                 </select>
             </div>
         </div>
-        <div class="group-pred-actions">${actionButton}</div>
+        <div class="group-pred-actions">
+            ${actionButton}
+            ${viewPredictionsButton}
+        </div>
     `;
     return card;
 }
