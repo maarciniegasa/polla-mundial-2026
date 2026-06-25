@@ -1086,6 +1086,90 @@ window.renderGroupPredictionsView = async function() {
     }
 };
 
+window.renderAdminGroupPredictionsView = async function() {
+    if (!currentUser || currentUser.role !== 'admin') return;
+    const container = document.getElementById('admin-group-predictions-container');
+    container.innerHTML = '<p style="color:#888;text-align:center;padding:2rem;">Cargando...</p>';
+
+    try {
+        const groupResultsSnap = await db.collection('groupResults').doc('results').get();
+        const groupResults = groupResultsSnap.exists ? groupResultsSnap.data() : {};
+
+        const groups = Object.keys(GROUP_TEAMS).sort();
+
+        container.innerHTML = '';
+        groups.forEach(groupId => {
+            const teams = GROUP_TEAMS[groupId];
+            const saved = groupResults[groupId] || { first: '', second: '' };
+            container.appendChild(createAdminGroupResultCard(groupId, teams, saved));
+        });
+    } catch(err) {
+        container.innerHTML = '<p style="color:#ef4444;text-align:center;padding:2rem;">Error al cargar.</p>';
+        console.error(err);
+    }
+};
+
+function createAdminGroupResultCard(groupId, teams, saved) {
+    const card = document.createElement('div');
+    card.className = 'group-pred-card';
+
+    const firstOptions = teams.map(t => `<option value="${t}"${saved.first === t ? ' selected' : ''}>${t}</option>`).join('');
+    const secondOptions = teams.map(t => `<option value="${t}"${saved.second === t ? ' selected' : ''}>${t}</option>`).join('');
+
+    card.innerHTML = `
+        <div class="group-pred-header">
+            <span class="group-pred-title">Grupo ${groupId}</span>
+            <span class="group-pred-status editable">Editable por Admin</span>
+        </div>
+        <div class="group-pred-teams">
+            <div class="group-pred-select-wrap">
+                <span class="group-pred-label">1.º Clasificado</span>
+                <select class="group-pred-select" data-group="${groupId}" data-position="first">
+                    <option value="">Seleccionar...</option>
+                    ${firstOptions}
+                </select>
+            </div>
+            <div class="group-pred-select-wrap">
+                <span class="group-pred-label">2.º Clasificado</span>
+                <select class="group-pred-select" data-group="${groupId}" data-position="second">
+                    <option value="">Seleccionar...</option>
+                    ${secondOptions}
+                </select>
+            </div>
+        </div>
+        <div class="group-pred-actions">
+            <button class="btn-save" onclick="saveGroupResult('${groupId}')">Guardar Resultado Oficial</button>
+        </div>
+    `;
+    return card;
+};
+
+window.saveGroupResult = async (groupId) => {
+    const firstSelect = document.querySelector(`.group-pred-select[data-group="${groupId}"][data-position="first"]`);
+    const secondSelect = document.querySelector(`.group-pred-select[data-group="${groupId}"][data-position="second"]`);
+    const first = firstSelect.value;
+    const second = secondSelect.value;
+
+    if (!first || !second) { alert('Debes seleccionar ambos clasificados.'); return; }
+    if (first === second) { alert('El 1.º y 2.º clasificado deben ser equipos diferentes.'); return; }
+
+    try {
+        showLoading('Guardando resultado...');
+        await db.collection('groupResults').doc('results').set(
+            { [groupId]: { first, second } },
+            { merge: true }
+        );
+        alert('✅ Resultado oficial guardado. Puntos recalculados.');
+        await updateLeaderboard();
+        await renderAdminGroupPredictionsView();
+    } catch(err) {
+        alert('Error al guardar. Revisa tu conexión.');
+        console.error(err);
+    } finally {
+        hideLoading();
+    }
+};
+
 function createGroupPredictionCard(groupId, teams, myPred, lockInfo) {
     const card = document.createElement('div');
     card.className = `group-pred-card${lockInfo.locked ? ' locked' : ''}`;

@@ -31,6 +31,12 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - ✅ **Validación servidor al guardar** (re-check `Date.now()` en `savePrediction`)
 - ✅ Estados visuales: `⏱ Cierra en X min`, `🔒 CERRADO`, `🔴 EN JUEGO`, `✅ FINALIZADO`
 - ✅ Filtro por fase/jornada
+- ✅ **Ver predicciones de otros jugadores** (NUEVO)
+  - Modal "Predicciones del día" en partidos bloqueados (30 min antes)
+  - Modal "Predicciones de grupos cerrados" para clasificados
+  - Filtro automático: solo jugadores de los mismos grupos del usuario
+  - Resaltado de predicción propia en verde con "(Tú)"
+  - Fecha en hora local Colombia (UTC-5), no UTC
 
 ### Predicción Clasificados (NUEVO)
 - ✅ Pestaña "Predicción clasificados" para seleccionar 1.º y 2.º por grupo (12 grupos A-L)
@@ -149,6 +155,18 @@ getOutcome(h, a) → 'H' | 'A' | 'D'
 
 - Desempate global: suma de `exact` (marcador 3pts + clasificados 5pts)
 
+### Ver Predicciones de Otros Jugadores (NUEVO)
+```javascript
+// En app.js: openMatchPredictionsModal() / openGroupPredictionsModal()
+```
+- **Disponible solo tras deadline** (partidos: 30 min antes; grupos: deadline cumplido)
+- **Botones en UI**: "👁 Ver predicciones del día" / "👁 Ver predicciones de grupos cerrados"
+- **Filtrado por grupos**: `users` query con `array-contains-any` (grupos del usuario actual)
+- **Fetch client-side**: `predictions.get()` + `groupPredictions.get()` para evitar límite `in` (max 10)
+- **Fecha local Colombia**: `getColombiaDateString()` resta 5h a UTC para `dateKey` correcto
+- **Modal responsive**: tabla con Jugador | Predicción (marcador) o 1.º/2.º (clasificados)
+- **Resaltado usuario actual**: fila verde con "(Tú)"
+
 ## Despliegue
 ```bash
 git add -A
@@ -177,6 +195,9 @@ Configurar en dashboard de Vercel:
 ## Historial de Cambios Recientes (Jun 2026)
 | Fecha | Commit | Descripción |
 |-------|--------|-------------|
+| 21-jun | `848ba39` | Fix: evitar límite Firestore 'in' query (fetch all predictions client-side) en modales |
+| 21-jun | `1357ed5` | Fix: usar zona horaria Colombia (UTC-5) para dateKey en modales predicciones |
+| 21-jun | `a9dd5fa` | Feat: ver predicciones de otros jugadores tras deadline (modales + botones) |
 | 18-jun | `0fe0695` | Feat: PDF download predicciones admin (filtrado grupo, solo partidos bloqueados) |
 | 18-jun | `43947b8` | Fix: evitar límite Firestore 'in' query (fetch all predictions client-side) |
 | 18-jun | `db0bbdd` | Feat: incluir predicciones de admins en PDF download |

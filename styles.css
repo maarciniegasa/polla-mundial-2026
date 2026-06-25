@@ -251,6 +251,7 @@ body { background-color: var(--bg-dark); color: var(--text-main); min-height: 10
 .group-pred-status.warning { background: rgba(251,191,36,0.15); color: var(--accent-gold); }
 .group-pred-status.locked { background: rgba(239,68,68,0.15); color: var(--accent-red); }
 .group-pred-status.finished { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+.group-pred-status.editable { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
 .group-pred-teams {
     display: grid;
     grid-template-columns: 1fr 1fr;
