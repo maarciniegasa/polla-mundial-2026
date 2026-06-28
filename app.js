@@ -1325,9 +1325,9 @@ async function updateLeaderboard() {
                 : 'Selecciona o crea un grupo para ver las posiciones.';
         }
 
-        const [usersSnap, finishedSnap, predsSnap, groupPredsSnap, groupResultsSnap] = await Promise.all([
+        const [usersSnap, allMatchesSnap, predsSnap, groupPredsSnap, groupResultsSnap] = await Promise.all([
             db.collection('users').get(),
-            db.collection('matches').where('status', '==', 'finished').get(),
+            db.collection('matches').get(),
             db.collection('predictions').get(),
             db.collection('groupPredictions').get(),
             db.collection('groupResults').doc('results').get()
@@ -1340,7 +1340,9 @@ async function updateLeaderboard() {
             users = users.filter(u => u.groups && u.groups.includes(currentGroupId));
         }
 
-        const finishedMatches = finishedSnap.docs.map(d => d.data());
+        const finishedMatches = allMatchesSnap.docs
+            .map(d => d.data())
+            .filter(m => m.realHome !== null && m.realAway !== null);
         const allPreds       = {};
         predsSnap.docs.forEach(d => { allPreds[d.id] = d.data(); });
         const allGroupPreds  = {};
