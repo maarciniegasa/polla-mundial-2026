@@ -46,36 +46,6 @@ function hideLoading() {
         }
     }
 
-// --- FORCE RESEED MATCHES (Admin only) ---
-window.forceReseedMatches = async function() {
-    if (!currentUser || currentUser.role !== 'admin') return;
-    if (!confirm('⚠️ Esto sobrescribirá TODOS los partidos en Firestore con los datos de data.js.\n\n¿Continuar?')) return;
-
-    try {
-        showLoading('Resembrando partidos desde data.js...');
-        const batch = db.batch();
-        allMatchesData.forEach(match => {
-            batch.set(db.collection('matches').doc(String(match.id)), match);
-        });
-        await batch.commit();
-        
-        // Update config timestamp
-        await db.collection('config').doc('app').set({
-            matchesSeeded: true,
-            seededAt: firebase.firestore.FieldValue.serverTimestamp(),
-            reseededAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        
-        alert('✅ Partidos resembrados correctamente. Recargando vista...');
-        await renderMatchesView();
-    } catch(err) {
-        alert('Error al resembrar: ' + err.message);
-        console.error(err);
-    } finally {
-        hideLoading();
-    }
-};
-
 // --- TIME LOCK LOGIC ---
 function parseMatchTime(timeStr) {
     const monthMap = {
