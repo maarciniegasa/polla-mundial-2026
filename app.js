@@ -1395,6 +1395,19 @@ async function updateLeaderboard() {
     }
 }
 
+window.recalculatePoints = async function() {
+    showLoading('Recalculando puntos...');
+    try {
+        await updateLeaderboard();
+        alert('✅ Puntos recalculados correctamente');
+    } catch(err) {
+        alert('Error al recalcular. Revisa consola.');
+        console.error(err);
+    } finally {
+        hideLoading();
+    }
+};
+
 // --- USERS MANAGEMENT ---
 window.renderUsersView = async function() {
     const tbody = document.getElementById('users-body');
