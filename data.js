@@ -597,115 +597,115 @@ const allMatchesData = [
     },
     {
         id: 73, phase: 'Ronda de 32', group: 'nan',
-        home: '2.º Grupo A', homeFlag: '🏳️',
-        away: '2.º Grupo B', awayFlag: '🏳️',
+        home: 'Sudáfrica', homeFlag: '🇿🇦',
+        away: 'Canadá', awayFlag: '🇨🇦',
         time: 'Dom 28-Jun, 2:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 76, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo C', homeFlag: '🏳️',
-        away: '2.º Grupo F', awayFlag: '🏳️',
+        home: 'Brasil', homeFlag: '🇧🇷',
+        away: 'Japón', awayFlag: '🇯🇵',
         time: 'Lun 29-Jun, 12:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 74, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo E', homeFlag: '🏳️',
-        away: 'Mejor 3.º (A/B/C/D/F)', awayFlag: '🏳️',
+        home: 'Alemania', homeFlag: '🇩🇪',
+        away: 'Paraguay', awayFlag: '🇵🇾',
         time: 'Lun 29-Jun, 3:30 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 75, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo F', homeFlag: '🏳️',
-        away: '2.º Grupo C', awayFlag: '🏳️',
+        home: 'Países Bajos', homeFlag: '🇳🇱',
+        away: 'Marruecos', awayFlag: '🇲🇦',
         time: 'Lun 29-Jun, 8:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 78, phase: 'Ronda de 32', group: 'nan',
-        home: '2.º Grupo E', homeFlag: '🏳️',
-        away: '2.º Grupo I', awayFlag: '🏳️',
+        home: 'Costa de Marfil', homeFlag: '🇨🇮',
+        away: 'Noruega', awayFlag: '🇳🇴',
         time: 'Mar 30-Jun, 12:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
-    {
+{
         id: 77, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo I', homeFlag: '🏳️',
-        away: 'Mejor 3.º (C/D/F/G/H)', awayFlag: '🏳️',
+        home: 'Francia', homeFlag: '🇫🇷',
+        away: 'Suecia', awayFlag: '🇸🇪',
         time: 'Mar 30-Jun, 4:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 79, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo A', homeFlag: '🏳️',
-        away: 'Mejor 3.º (C/E/F/H/I)', awayFlag: '🏳️',
+        home: 'México', homeFlag: '🇲🇽',
+        away: 'Ecuador', awayFlag: '🇪🇨',
         time: 'Mar 30-Jun, 8:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 80, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo L', homeFlag: '🏳️',
-        away: 'Mejor 3.º (E/H/I/J/K)', awayFlag: '🏳️',
+        home: 'Inglaterra', homeFlag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+        away: 'República del Congo', awayFlag: '🇨🇩',
         time: 'Mié 1-Jul, 11:00 AM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 82, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo G', homeFlag: '🏳️',
-        away: 'Mejor 3.º (A/E/H/I/J)', awayFlag: '🏳️',
+        home: 'Bélgica', homeFlag: '🇧🇪',
+        away: 'Senegal', awayFlag: '🇸🇳',
         time: 'Mié 1-Jul, 3:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 81, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo D', homeFlag: '🏳️',
-        away: 'Mejor 3.º (B/E/F/I/J)', awayFlag: '🏳️',
+        home: 'EE.UU.', homeFlag: '🇺🇸',
+        away: 'Bosnia y Herzegovina', awayFlag: '🇧🇦',
         time: 'Mié 1-Jul, 7:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 84, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo H', homeFlag: '🏳️',
-        away: '2.º Grupo J', awayFlag: '🏳️',
+        home: 'España', homeFlag: '🇪🇸',
+        away: 'Austria', awayFlag: '🇦🇹',
         time: 'Jue 2-Jul, 2:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 83, phase: 'Ronda de 32', group: 'nan',
-        home: '2.º Grupo K', homeFlag: '🏳️',
-        away: '2.º Grupo L', awayFlag: '🏳️',
+        home: 'Portugal', homeFlag: '🇵🇹',
+        away: 'Croacia', awayFlag: '🇭🇷',
         time: 'Jue 2-Jul, 6:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 85, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo B', homeFlag: '🏳️',
-        away: 'Mejor 3.º (E/F/G/I/J)', awayFlag: '🏳️',
+        home: 'Suiza', homeFlag: '🇨🇭',
+        away: 'Argelia', awayFlag: '🇩🇿',
         time: 'Jue 2-Jul, 10:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 88, phase: 'Ronda de 32', group: 'nan',
-        home: '2.º Grupo D', homeFlag: '🏳️',
-        away: '2.º Grupo G', awayFlag: '🏳️',
+        home: 'Australia', homeFlag: '🇦🇺',
+        away: 'Egipto', awayFlag: '🇪🇬',
         time: 'Vie 3-Jul, 1:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 86, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo J', homeFlag: '🏳️',
-        away: '2.º Grupo H', awayFlag: '🏳️',
+        home: 'Argentina', homeFlag: '🇦🇷',
+        away: 'Cabo Verde', awayFlag: '🇨🇻',
         time: 'Vie 3-Jul, 5:00 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 87, phase: 'Ronda de 32', group: 'nan',
-        home: '1.º Grupo K', homeFlag: '🏳️',
-        away: 'Mejor 3.º (D/E/I/J/L)', awayFlag: '🏳️',
+        home: 'Colombia', homeFlag: '🇨🇴',
+        away: 'Ghana', awayFlag: '🇬🇭',
         time: 'Vie 3-Jul, 8:30 PM', status: 'scheduled',
-        realHome: null, realAway: null, isTBD: true
+        realHome: null, realAway: null, isTBD: false
     },
     {
         id: 89, phase: 'Octavos de Final', group: 'nan',

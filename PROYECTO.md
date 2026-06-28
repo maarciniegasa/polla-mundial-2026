@@ -7,7 +7,7 @@ Aplicación web para polla del Mundial FIFA 2026 construida con Firebase (Firest
 - **Frontend**: HTML5, CSS3, JavaScript vanilla (ES6+)
 - **Backend**: Firebase Firestore (base de datos) + Firebase Auth (autenticación)
 - **Hosting**: Vercel (deploy automático desde GitHub)
-- **Datos**: 104 partidos del Mundial 2026 (fase de grupos + eliminatorias)
+- **Datos**: 104 partidos del Mundial 2026 (fase de grupos + eliminatorias; **dieciseisavos M73-M88 seedados desde Excel oficial NBC/Fox Sports**)
 - **Librerías externas**: jsPDF + autoTable (generación PDF reportes)
 
 ## Funcionalidades Implementadas
@@ -93,7 +93,7 @@ mundial/
 ├── index.html          # Estructura UI + navegación
 ├── styles.css          # Estilos (tema oscuro, responsive)
 ├── app.js              # Lógica completa (auth, matches, leaderboard, admin)
-├── data.js             # 104 partidos hardcoded (seed inicial)
+├── data.js             # 104 partidos hardcoded (seed inicial; dieciseisavos M73-M88 con equipos reales desde Excel)
 ├── firebase-config.js  # Config Firebase (no versionar secrets)
 ├── vercel.json         # Config deploy Vercel
 └── PROYECTO.md         # Este archivo
@@ -195,6 +195,8 @@ Configurar en dashboard de Vercel:
 ## Historial de Cambios Recientes (Jun 2026)
 | Fecha | Commit | Descripción |
 |-------|--------|-------------|
+| 27-jun | — | Feat: actualización dieciseisavos (M73-M88) con equipos y banderas reales desde Excel oficial |
+| 25-jun | `67c9a38` | Feat: panel admin - input clasificados 1.º/2.º por grupo (Fase de Grupos) |
 | 21-jun | `848ba39` | Fix: evitar límite Firestore 'in' query (fetch all predictions client-side) en modales |
 | 21-jun | `1357ed5` | Fix: usar zona horaria Colombia (UTC-5) para dateKey en modales predicciones |
 | 21-jun | `a9dd5fa` | Feat: ver predicciones de otros jugadores tras deadline (modales + botones) |
